@@ -102,7 +102,11 @@ if [ "$UPGRADE" = "YES" ]; then
   export CODE_COVERAGE=1
   export BUILD_SERVER=ON
   
-  if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
+  if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0;
+  elif [ "$ENVTYPE" == "Haiku" ]; then    
+    export COMPILER_NAME=gcc-x86
+    export CXX=g++-x86
+    export CC=gcc-x86 
   else 
     export COMPILER_NAME=gcc
     export CXX=g++-6
@@ -115,6 +119,83 @@ case $ENVTYPE in
  	   echo -e "You seem to be running MacOS X Env"
 	    # TODO Here
 	;;  
+	
+   "Haiku" )
+    echo -e "Bulding on Haiku"
+
+
+  CMAKE_PARAMS="-DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}"  -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=TRUE \
+      -DCMAKE_CXX_STANDARD=14 \
+      -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
+      -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
+      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/lib/LibStatic/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/LibStatic/libRakNetLibStatic.a \
+      -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
+      -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
+
+   if [ $BUILD_BOOST ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DBOOST_INCLUDE_DIR="${BOOST_LOCATION}"/include "
+      export BOOST_ROOT="${BOOST_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BOOST_LOCATION}"/install/lib
+   fi
+   
+   if [ $BUILD_OPENAL ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/include "
+      export OPENALDIR="${OPENAL_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
+   fi
+   
+   if [ $BUILD_FFMPEG ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/include "
+      export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
+   fi
+   
+   if [ $BUILD_MYGUI ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DMYGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/include "
+      export MYGUI_HOME="${MYGUI_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
+   fi
+ 
+  if [ $BUILD_OSG ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DOPENTHREADS_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOPENTHREADS_LIBRARY="${OSG_LOCATION}"/build/lib/libOpenThreads.so \
+      -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSG_LIBRARY="${OSG_LOCATION}"/build/lib/libosg.so \
+      -DOSGANIMATION_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/build/lib/libosgAnimation.so \
+      -DOSGDB_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGDB_LIBRARY="${OSG_LOCATION}"/build/lib/libosgDB.so \
+      -DOSGFX_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGFX_LIBRARY="${OSG_LOCATION}"/build/lib/libosgFX.so \
+      -DOSGGA_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGGA_LIBRARY="${OSG_LOCATION}"/build/lib/libosgGA.so \
+      -DOSGPARTICLE_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGPARTICLE_LIBRARY="${OSG_LOCATION}"/build/lib/libosgParticle.so \
+      -DOSGTEXT_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGTEXT_LIBRARY="${OSG_LOCATION}"/build/lib/libosgText.so \
+      -DOSGUTIL_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGUTIL_LIBRARY="${OSG_LOCATION}"/build/lib/libosgUtil.so \
+      -DOSGVIEWER_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGVIEWER_LIBRARY="${OSG_LOCATION}"/build/lib/libosgViewer.so"
+  fi
+  
+  if [ $BUILD_BULLET ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DBullet_INCLUDE_DIR="${BULLET_LOCATION}"/install/include/bullet \
+      -DBullet_BulletCollision_LIBRARY="${BULLET_LOCATION}"/install/lib/libBulletCollision.so \
+      -DBullet_LinearMath_LIBRARY="${BULLET_LOCATION}"/install/lib/libLinearMath.so"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BULLET_LOCATION}"/install/lib
+    export BULLET_ROOT="${BULLET_LOCATION}"/install
+  fi
+  
+    ;;
+
   
    "Msys" | "Cygwin" ) # fixme So... where is Msys1 OR Msys2?
      

@@ -25,8 +25,24 @@ case $ENVTYPE in
    "MacOS" ) # fixme add support this platform
  	   echo -e "You seem to be running MacOS X Env"
 	    # TODO Here
-	;;  
-  
+	;;
+	  
+   "Haiku" )
+	   echo -e "You seem to be running Haiku Env"
+	    # TODO Here
+	    pkgman update
+	    pkgman install git cmake_x86 boost_x86 openal_x86_devel ffmpeg_x86_devel libsdl2_x86_devel qt5_x86_devel freetype_x86_devel zlib_x86_devel jpeg_x86_devel tiff4_x86_devel libpng16_x86_devel giflib_x86_devel jasper_x86_devel mesa_x86_devel ncurses_x86_devel llvm_x86_clang #lua_x86_devel #curl_x86_devel
+	    
+	    BUILD_BULLET=true
+        BUILD_UNSHIELD=true
+    	#BUILD_BOOST=true #Fix me building not work
+    	#BUILD_SDL2=true    	
+        BUILD_OSG=true # seem OpenSceneGraph not fully ported on hauku yet       
+        BUILD_MYGUI=true
+        #BUILD_OPENAL=true
+    	#BUILD_FFMPEG=true #Fix me building not work
+        BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
+    ;;
    "Msys" | "Cygwin" )
      
 	 echo -e "You seem to be running either Windows family OS, or other Windows-like build type"
@@ -275,6 +291,10 @@ echo -e "\n>> Setup compiler setings"
  export CODE_COVERAGE=1
   
   if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
+  elif [ "$ENVTYPE" == "Haiku" ]; then    
+    export COMPILER_NAME=gcc-x86
+    export CXX=g++-x86
+    export CC=gcc-x86
   else 
     export COMPILER_NAME=gcc
     export CXX=g++-6
@@ -429,7 +449,7 @@ echo -e "\n>> Building OpenSceneGraph"
     fi
 
     cd "$BASE"
- fi
+ 
 fi
 
 #BUILD BULLET
