@@ -85,10 +85,12 @@ case $ENVTYPE in
 	    # github.com/transcode-open/apt-cyg
 	    
 	    #apt-cyg is a simple script. To install:
+		if [ ! -f /bin/apt-cyg ]; then
         #lynx -source rawgit.com/transcode-open/apt-cyg/master/apt-cyg > apt-cyg
         wget https://raw.githubusercontent.com/transcode-open/apt-cyg/master/apt-cyg -O apt-cyg # If don't hawe lynx, use wget
         install apt-cyg /bin
-	    
+	    fi
+		
 	    apt-cyg update
 	    
 	    apt-cyg install git cmake libboost-devel libopenal-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libfreetype-devel gcc-g++ ncurses w32api-headers clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
@@ -275,6 +277,10 @@ echo -e "\n>> Setup compiler setings"
  export CODE_COVERAGE=1
   
   if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
+  elif [ "$ENVTYPE" == "Cygwin" ]; then # fixme if use mingw its not working
+    export COMPILER_NAME=gcc
+    export CXX=g++
+    export CC=gcc
   else 
     export COMPILER_NAME=gcc
     export CXX=g++-6
@@ -429,7 +435,7 @@ echo -e "\n>> Building OpenSceneGraph"
     fi
 
     cd "$BASE"
- fi
+ 
 fi
 
 #BUILD BULLET

@@ -103,6 +103,10 @@ if [ "$UPGRADE" = "YES" ]; then
   export BUILD_SERVER=ON
   
   if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
+  elif [ "$ENVTYPE" == "Cygwin" ]; then # fixme if use mingw its not working
+    export COMPILER_NAME=gcc
+    export CXX=g++
+    export CC=gcc
   else 
     export COMPILER_NAME=gcc
     export CXX=g++-6
