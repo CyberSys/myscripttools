@@ -429,7 +429,7 @@ echo -e "\n>> Building OpenSceneGraph"
     fi
 
     cd "$BASE"
- fi
+ 
 fi
 
 #BUILD BULLET
