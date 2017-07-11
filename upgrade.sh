@@ -43,7 +43,8 @@ if [ -d "$DEPENDENCIES"/ffmpeg ]; then
   BUILD_FFMPEG=true
 fi
 
-#LOCATIONS OF RAKNET AND TERRA 
+#DEPENDENCY LOCATIONS
+CALLFF_LOCATION="$DEPENDENCIES"/callff
 RAKNET_LOCATION="$DEPENDENCIES"/raknet
 TERRA_LOCATION="$DEPENDENCIES"/terra
 #Set for other deps if needed 
@@ -127,12 +128,14 @@ case $ENVTYPE in
     #Check Windows Env And setup build parms
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW32_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" )
+	"MINGW64*" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" )
 	   echo -e "Building on MINGW32 Env"
 	    # TODO Here	    
 	CMAKE_PARAMS="-DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}" -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=TRUE \
       -DCMAKE_CXX_STANDARD=14 \
       -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
+	  -DCallFF_INCLUDES="${CALLFF_LOCATION}"/include \
+      -DCallFF_LIBRARY="${CALLFF_LOCATION}"/build/src/libcallff.a \	
       -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
       -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
       -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
@@ -152,27 +155,27 @@ case $ENVTYPE in
    
         if [ $BUILD_OPENAL ]; then
          CMAKE_PARAMS="$CMAKE_PARAMS \
-        -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/include "
+        -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include/AL "
          export OPENALDIR="${OPENAL_LOCATION}"/install
          export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
         fi
    
         if [ $BUILD_FFMPEG ]; then
          CMAKE_PARAMS="$CMAKE_PARAMS \
-        -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/include "
+        -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include "
          export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
          export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
         fi
    
         if [ $BUILD_MYGUI ]; then
           CMAKE_PARAMS="$CMAKE_PARAMS \
-         -DMYGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/include "
+         -DMYGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/install/include "
           export MYGUI_HOME="${MYGUI_LOCATION}"/install
           export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
         fi
 		if [ $BUILD_OSG ]; then
        CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DOPENTHREADS_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOPENTHREADS_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOPENTHREADS_LIBRARY="${OSG_LOCATION}"/build/lib/libOpenThreads.dll.a \
       -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/include \
       -DOSG_LIBRARY="${OSG_LOCATION}"/build/lib/libosg.dll.a \
@@ -192,6 +195,8 @@ case $ENVTYPE in
       -DOSGUTIL_LIBRARY="${OSG_LOCATION}"/build/lib/libosgUtil.dll.a \
       -DOSGVIEWER_INCLUDE_DIR="${OSG_LOCATION}"/include \
       -DOSGVIEWER_LIBRARY="${OSG_LOCATION}"/build/lib/libosgViewer.dll.a"
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OSG_LOCATION}"/install/lib
+    export OSG_ROOT="${OSG_LOCATION}"/install
   fi
   
   if [ $BUILD_BULLET ]; then

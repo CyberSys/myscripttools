@@ -34,7 +34,7 @@ case $ENVTYPE in
     #Check Windows Env And Install Deps
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
+	"MINGW64*" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
 	
 		if [ "$ENVREL" == "1.0.11(0.46/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
 		echo -e "You seem to be running MSYS 1 MINGW32 Env"
@@ -42,7 +42,7 @@ case $ENVTYPE in
 		# Msys1 prepare
 		
 		else
-	    echo -e "You seem to be running MSYS 2 MINGW32 Env"
+	    
 	    # TODO Here
 		# Msys2 prepare
 		#Install MSYS2 MINGW32 / MINGW64
@@ -51,11 +51,18 @@ case $ENVTYPE in
 		# pacman -Syuu   # update the package list, broken on nt-5.1
 		
 	    #If you installed 64-bit MSYS2, then do
-		# pacman -S base-devel mingw-w64-x86_64-toolchain
+		if [ "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" ]; then
+		echo -e "You seem to be running MSYS 2 MINGW64 Env"
+		 pacman -Sy base-devel mingw-w64-x86_64-toolchain
+		 
+		 pacman -Sy git mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openal mingw-w64-x86_64-OpenSceneGraph mingw-w64-x86_64-bullet mingw-w64-x86_64-qt5 mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-SDL2 mingw-w64-x86_64-ncurses mingw-w64-x86_64-clang mingw-w64-x86_64-llvm #unshield #mygui  #clang35 llvm35 #libxkbcommon-x11		
+		 
+		 else
 		#If you installed 32-bit MSYS2, then do
+		echo -e "You seem to be running MSYS 2 MINGW32 Env"				
 		 pacman -Sy base-devel mingw-w64-i686-toolchain   
 		
-		 pacman -Sy git mingw-w64-i686-cmake mingw-w64-i686-boost mingw-w64-i686-openal mingw-w64-i686-OpenSceneGraph mingw-w64-i686-bullet mingw-w64-i686-qt5 mingw-w64-i686-ffmpeg mingw-w64-x86_64-SDL2 mingw-w64-i686-ncurses mingw-w64-i686-clang mingw-w64-i686-llvm #unshield #mygui  #clang35 llvm35 #libxkbcommon-x11
+		 pacman -Sy git mingw-w64-i686-cmake mingw-w64-i686-boost mingw-w64-i686-openal mingw-w64-i686-OpenSceneGraph mingw-w64-i686-bullet mingw-w64-i686-qt5 mingw-w64-i686-ffmpeg mingw-w64-i686-SDL2 mingw-w64-i686-ncurses mingw-w64-i686-clang mingw-w64-i686-llvm #unshield #mygui  #clang35 llvm35 #libxkbcommon-x11
 		
 	    #echo -e "\nIf you wish to build OpenSceneGraph from source\nhttps://wiki.openmw.org/index.php?title=Development_Environment_Setup#Build_and_install_OSG\n\nType YES if you want the script to do it automatically (THIS IS BROKEN ATM)\nIf you already have it installed or want to do it manually,\npress ENTER to continue"
         #read INPUT
@@ -63,8 +70,12 @@ case $ENVTYPE in
         #      echo -e "\nOpenSceneGraph will be built from source"
         #      BUILD_OSG=true       
         #fi
+		
+		BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
+		
+        fi
         
-        BUILD_UNSHIELD=true
+		BUILD_UNSHIELD=true
     	#BUILD_BOOST=true
     	#BUILD_SDL2=true    	
         #BUILD_OSG=true
@@ -234,6 +245,7 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
+git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
 if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
 if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
 if [ $BUILD_BULLET ]; then git clone https://github.com/bulletphysics/bullet3.git "$DEPENDENCIES"/bullet ; fi
@@ -457,9 +469,15 @@ echo -e "\n>> Building OpenSceneGraph"
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
 	if [ "$ENVTYPE" == "Msys" ]; then
-	cmake -G "MSYS Makefiles" ..
+	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
 	else
-    cmake ..
+    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
 	fi
     make -j$CORES
 
@@ -505,7 +523,8 @@ if [ ! -e mygui ]; then
   git clone https://github.com/MyGUI/mygui
 fi
 cd mygui
-git pull
+#git pull
+git checkout tags/MyGUI3.2.2
 mkdir "$DEPENDENCIES"/mygui/build 
 cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
@@ -543,6 +562,24 @@ make install
 cd "$BASE"
 
 fi
+
+#BUILD CALLFF #Windows support not implement yet
+echo -e "\n>> Building CallFF"
+ mkdir "$DEPENDENCIES"/callff/build
+ cd "$DEPENDENCIES"/callff/build
+ if [ "$ENVTYPE" == "Msys" ]; then
+ cmake -G "MSYS Makefiles" ..
+ else
+ cmake ..
+ fi
+ make -j$CORES
+
+  if [ $? -ne 0 ]; then
+        echo -e "Failed to build CallFF.\nExiting..."
+        exit 1
+  fi
+
+cd "$BASE"
 
 #BUILD RAKNET
 echo -e "\n>> Building RakNet"
