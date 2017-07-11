@@ -102,7 +102,11 @@ if [ "$UPGRADE" = "YES" ]; then
   export CODE_COVERAGE=1
   export BUILD_SERVER=ON
   
-  if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
+  if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0;
+  elif [ "$ENVTYPE" == "Msys" ]; then 
+    export COMPILER_NAME=gcc
+    export CXX=g++
+    export CC=gcc  
   else 
     export COMPILER_NAME=gcc
     export CXX=g++-6
@@ -123,7 +127,7 @@ case $ENVTYPE in
     #Check Windows Env And setup build parms
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW32_NT-5.1" )
+	"MINGW64*" | "MINGW32_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" )
 	   echo -e "Building on MINGW32 Env"
 	    # TODO Here	    
 	CMAKE_PARAMS="-DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}" -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=TRUE \
@@ -135,6 +139,9 @@ case $ENVTYPE in
       -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
       -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
 		
+		if [ "$ENVTYPE" == "Msys" ]; then
+		CMAKE_PARAMS="$CMAKE_PARAMS" -G "MSYS Makefiles"
+		fi
 		
         if [ $BUILD_BOOST ]; then
          CMAKE_PARAMS="$CMAKE_PARAMS \

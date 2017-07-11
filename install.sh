@@ -34,7 +34,7 @@ case $ENVTYPE in
     #Check Windows Env And Install Deps
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" ) # fixme add other ver MINGW/MSYS
+	"MINGW64*" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
 	
 		if [ "$ENVREL" == "1.0.11(0.46/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
 		echo -e "You seem to be running MSYS 1 MINGW32 Env"
@@ -72,7 +72,7 @@ case $ENVTYPE in
         BUILD_MYGUI=true
         #BUILD_OPENAL=true
     	#BUILD_FFMPEG=true
-        BUILD_TERRA=true
+        #BUILD_TERRA=true
 		
 		fi
 		;;
@@ -275,6 +275,10 @@ echo -e "\n>> Setup compiler setings"
  export CODE_COVERAGE=1
   
   if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
+  elif [ "$ENVTYPE" == "Msys" ]; then 
+    export COMPILER_NAME=gcc
+    export CXX=g++
+    export CC=gcc  
   else 
     export COMPILER_NAME=gcc
     export CXX=g++-6
@@ -288,7 +292,11 @@ if [ $BUILD_UNSHIELD ]; then
 	 mkdir "$DEPENDENCIES"/unshield/build 
 	 cd "$DEPENDENCIES"/unshield/build 
      rm CMakeCache.txt
+	 if [ "$ENVTYPE" == "Msys" ]; then
+	 cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/unshield/install -DCMAKE_BUILD_TYPE=Release ..
+	 else
      cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/unshield/install -DCMAKE_BUILD_TYPE=Release ..
+	 fi
      make -j$CORES
 
       if [ $? -ne 0 ]; then
@@ -310,7 +318,11 @@ if [ $BUILD_BOOST ]; then # building not work
 	 mkdir "$DEPENDENCIES"/boost/build 
 	 cd "$DEPENDENCIES"/boost/build 
      rm CMakeCache.txt
+	 if [ "$ENVTYPE" == "Msys" ]; then
+	 cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/boost/install -DCMAKE_BUILD_TYPE=Release ..
+	 else
      cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/boost/install -DCMAKE_BUILD_TYPE=Release ..
+	 fi
      make -j$CORES
 
       if [ $? -ne 0 ]; then
@@ -335,8 +347,13 @@ mv openal-soft-* openal
 mkdir "$DEPENDENCIES"/openal/build 
 cd "$DEPENDENCIES"/openal/build
 rm CMakeCache.txt
+if [ "$ENVTYPE" == "Msys" ]; then
+cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/openal/install \
+-DCMAKE_CXX_FLAGS="-march=native" ..
+else
 cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/openal/install \
 -DCMAKE_CXX_FLAGS="-march=native" ..
+fi
 make -j$CORES
 
 if [ $? -ne 0 ]; then
@@ -364,7 +381,11 @@ git checkout cmake
 mkdir "$DEPENDENCIES"/ffmpeg/build 
 cd "$DEPENDENCIES"/ffmpeg/build
 rm CMakeCache.txt
+if [ "$ENVTYPE" == "Msys" ]; then
+cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/ffmpeg/install -DCMAKE_BUILD_TYPE=Release ..
+else
 cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/ffmpeg/install -DCMAKE_BUILD_TYPE=Release ..
+fi
 make -j$CORES
 
 if [ $? -ne 0 ]; then
@@ -387,6 +408,20 @@ if [ $BUILD_OSG ]; then
    mkdir "$DEPENDENCIES"/osg_3rdparty/build
    cd "$DEPENDENCIES"/osg_3rdparty/build    
     rm CMakeCache.txt
+	if [ "$ENVTYPE" == "Msys" ]; then
+	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg_3rdparty/install \
+     -DZLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/zlib \
+     -DMINIZIP_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/minizip \
+     -DLIBPNG_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libpng \
+     -DLIBJPEG_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libjpeg \
+     #-DLIBJASPER_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/jasper 
+     -DLIBTIFF_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libtiff \ 
+     -DGIFLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/giflib  \
+     -DFREETYPE_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/freetype \
+     -DGLUT_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/glut \
+     #-DCURL_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/curl  
+     -DCMAKE_BUILD_TYPE=Release ..
+	else
     cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg_3rdparty/install \
      -DZLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/zlib \
      -DMINIZIP_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/minizip \
@@ -399,6 +434,7 @@ if [ $BUILD_OSG ]; then
      -DGLUT_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/glut \
      #-DCURL_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/curl  
      -DCMAKE_BUILD_TYPE=Release ..
+	 fi
     make -j$CORES
 
     if [ $? -ne 0 ]; then
@@ -420,7 +456,11 @@ echo -e "\n>> Building OpenSceneGraph"
     git checkout tags/OpenSceneGraph-3.5.4
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
+	if [ "$ENVTYPE" == "Msys" ]; then
+	cmake -G "MSYS Makefiles" ..
+	else
     cmake ..
+	fi
     make -j$CORES
 
     if [ $? -ne 0 ]; then
@@ -429,7 +469,7 @@ echo -e "\n>> Building OpenSceneGraph"
     fi
 
     cd "$BASE"
- fi
+ 
 fi
 
 #BUILD BULLET
@@ -440,8 +480,12 @@ if [ $BUILD_BULLET ]; then
     git checkout tags/2.86
     cd "$DEPENDENCIES"/bullet/build
     rm CMakeCache.txt
+	if [ "$ENVTYPE" == "Msys" ]; then
+	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DINSTALL_EXTRA_LIBS=1 -DCMAKE_BUILD_TYPE=Release ..    
+	else
     cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DINSTALL_EXTRA_LIBS=1 -DCMAKE_BUILD_TYPE=Release ..
-    make -j$CORES
+    fi
+	make -j$CORES
 
     if [ $? -ne 0 ]; then
       echo -e "Failed to build Bullet.\nExiting..."
@@ -465,6 +509,18 @@ git pull
 mkdir "$DEPENDENCIES"/mygui/build 
 cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
+if [ "$ENVTYPE" == "Msys" ]; then
+cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
+-DFREETYPE_INCLUDE_DIR=/usr/include/freetype2/ \
+-DMYGUI_RENDERSYSTEM=4 \
+-DMYGUI_BUILD_DEMOS:BOOL=OFF \
+-DMYGUI_BUILD_DOCS:BOOL=OFF \
+-DMYGUI_BUILD_TEST_APP:BOOL=OFF \
+-DMYGUI_BUILD_TOOLS:BOOL=OFF \
+-DMYGUI_BUILD_PLUGINS:BOOL=OFF \
+-DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+-DCMAKE_CXX_FLAGS="-march=native" ..
+else
 cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
 -DFREETYPE_INCLUDE_DIR=/usr/include/freetype2/ \
 -DMYGUI_BUILD_DEMOS:BOOL=OFF \
@@ -474,6 +530,7 @@ cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
 -DMYGUI_BUILD_PLUGINS:BOOL=OFF \
 -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
 -DCMAKE_CXX_FLAGS="-march=native" ..
+fi
 make -j$CORES
 
 if [ $? -ne 0 ]; then
@@ -493,7 +550,11 @@ cd "$DEPENDENCIES"/raknet
 mkdir "$DEPENDENCIES"/raknet/build
 cd "$DEPENDENCIES"/raknet/build
 rm CMakeCache.txt
+if [ "$ENVTYPE" == "Msys" ]; then
+cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release -DRAKNET_ENABLE_DLL=OFF -DRAKNET_ENABLE_SAMPLES=OFF -DRAKNET_ENABLE_STATIC=ON -DRAKNET_GENERATE_INCLUDE_ONLY_DIR=ON ..
+else
 cmake -DCMAKE_BUILD_TYPE=Release -DRAKNET_ENABLE_DLL=OFF -DRAKNET_ENABLE_SAMPLES=OFF -DRAKNET_ENABLE_STATIC=ON -DRAKNET_GENERATE_INCLUDE_ONLY_DIR=ON ..
+fi
 make -j$CORES
 
 if [ $? -ne 0 ]; then
