@@ -76,7 +76,7 @@ case $ENVTYPE in
 		
 		fi
 		;;
-	"CYGWIN*" | "CYGWIN_NT-5.1" ) # fixme add other ver CYGWIN
+	"CYGWIN*" | "CYGWIN_NT-5.1" | CYGWIN_NT-10.0-WOW | CYGWIN_NT-10.0 ) # fixme add other ver CYGWIN
 	   echo -e "You seem to be running CYGWIN Env"
 	    # TODO Here
 	    # Cygwin prepare
@@ -93,14 +93,19 @@ case $ENVTYPE in
 		
 	    apt-cyg update
 	    
-	    apt-cyg install git cmake libboost-devel libopenal-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libfreetype-devel gcc-g++ ncurses w32api-headers clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
+	    apt-cyg install git cmake libboost-devel libopenal-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libfreetype-devel gcc-g++ make ncurses w32api-headers clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
         
         # If use MinGW under Cygwin then do
         # for x32
+		#if [ "$ENVPLATFOM" == "MINGW64_NT-10.0" ]; then 
         #apt-cyg install mingw64-i686-openal mingw64-i686-SDL2 mingw64-i686-qt5-base mingw64-i686-freetype2 mingw64-i686-gcc-g++ mingw64-i686-ncurses #mingw64-i686-clang #mingw64-i686-llvm 
+        #
+		#else
         # or x64
         #apt-cyg install mingw64-x86_64-openal mingw64-x86_64-SDL2 mingw64-x86_64-qt5-base mingw64-x86_64-freetype2 mingw64-x86_64-gcc-g++ mingw64-x86_64-ncurses #mingw64-x86_64-clang #mingw64-x86_64-llvm
-        
+        #
+		#fi
+		
         BUILD_UNSHIELD=true
     	#BUILD_BOOST=true
     	#BUILD_SDL2=true    	
