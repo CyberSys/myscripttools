@@ -76,7 +76,7 @@ case $ENVTYPE in
 		
 		fi
 		;;
-	"CYGWIN*" | "CYGWIN_NT-5.1" | CYGWIN_NT-10.0-WOW | CYGWIN_NT-10.0 ) # fixme add other ver CYGWIN
+	"CYGWIN*" | "CYGWIN_NT-5.1" | "CYGWIN_NT-10.0-WOW" | "CYGWIN_NT-10.0" ) # fixme add other ver CYGWIN
 	   echo -e "You seem to be running CYGWIN Env"
 	    # TODO Here
 	    # Cygwin prepare
@@ -93,9 +93,9 @@ case $ENVTYPE in
 		
 	    apt-cyg update
 	    
-	    apt-cyg install git cmake libboost-devel libopenal-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libfreetype-devel gcc-g++ make ncurses w32api-headers clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
+	    apt-cyg install git cmake cygport libboost-devel libopenal-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libfreetype-devel gcc-g++ make nasm ncurses w32api-headers clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
         
-        # If use MinGW under Cygwin then do
+        # If use MinGW under Cygwin then do (not implement/tested yet )
         # for x32
 		#if [ "$ENVPLATFOM" == "CYGWIN_NT-10.0" ]; then 
         #apt-cyg install mingw64-i686-openal mingw64-i686-SDL2 mingw64-i686-qt5-base mingw64-i686-freetype2 mingw64-i686-gcc-g++ mingw64-i686-ncurses #mingw64-i686-clang #mingw64-i686-llvm 
@@ -107,13 +107,13 @@ case $ENVTYPE in
 		#fi
 		
         BUILD_UNSHIELD=true
-    	#BUILD_BOOST=true
-    	#BUILD_SDL2=true    	
+    	#BUILD_BOOST=true 
+    	#BUILD_SDL2=true # not implement/tested yet   	
         BUILD_OSG=true #Fix me building not work on cygwin jpeg tiff jasper etc...
         BUILD_BULLET=true
         BUILD_MYGUI=true
         #BUILD_OPENAL=true
-    	BUILD_FFMPEG=true
+    	BUILD_FFMPEG=true #Fix me building not work
         BUILD_TERRA=true
         
 	   ;; 
@@ -241,6 +241,7 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
+git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
 if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
 if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
 if [ $BUILD_BULLET ]; then git clone https://github.com/bulletphysics/bullet3.git "$DEPENDENCIES"/bullet ; fi
@@ -282,7 +283,7 @@ echo -e "\n>> Setup compiler setings"
  export CODE_COVERAGE=1
   
   if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
-  elif [ "$ENVTYPE" == "Cygwin" ]; then # fixme if use mingw its not working
+  elif [ "$ENVTYPE" == "Cygwin" ]; then # fixme if use mingw maybe its not working
     export COMPILER_NAME=gcc
     export CXX=g++
     export CC=gcc
@@ -372,12 +373,17 @@ fi
 cd ffmpeg
 git pull
 git checkout cmake
+if [ "$ENVTYPE" == "Cygwin" ]; then
+cd "$DEPENDENCIES"/ffmpeg
+./configure --prefix="$DEPENDENCIES"/ffmpeg/install
+make -j$CORES
+else
 mkdir "$DEPENDENCIES"/ffmpeg/build 
 cd "$DEPENDENCIES"/ffmpeg/build
 rm CMakeCache.txt
 cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/ffmpeg/install -DCMAKE_BUILD_TYPE=Release ..
 make -j$CORES
-
+fi
 if [ $? -ne 0 ]; then
   echo -e "Failed to build FFMPEG.\nExiting..."
   exit 1
@@ -431,13 +437,18 @@ echo -e "\n>> Building OpenSceneGraph"
     git checkout tags/OpenSceneGraph-3.5.4
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
-    cmake ..
+    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
     make -j$CORES
 
     if [ $? -ne 0 ]; then
       echo -e "Failed to build OpenSceneGraph.\nExiting..."
       exit 1
     fi
+	
+	make install
 
     cd "$BASE"
  
@@ -472,7 +483,8 @@ if [ ! -e mygui ]; then
   git clone https://github.com/MyGUI/mygui
 fi
 cd mygui
-git pull
+#git pull
+git checkout tags/MyGUI3.2.2
 mkdir "$DEPENDENCIES"/mygui/build 
 cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
@@ -497,6 +509,20 @@ make install
 cd "$BASE"
 
 fi
+
+#BUILD CALLFF
+echo -e "\n>> Building CallFF"
+ mkdir "$DEPENDENCIES"/callff/build
+ cd "$DEPENDENCIES"/callff/build
+ cmake ..
+ make -j$CORES
+
+  if [ $? -ne 0 ]; then
+        echo -e "Failed to build CallFF.\nExiting..."
+        exit 1
+  fi
+
+cd "$BASE"
 
 #BUILD RAKNET
 echo -e "\n>> Building RakNet"
