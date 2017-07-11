@@ -97,7 +97,7 @@ case $ENVTYPE in
         
         # If use MinGW under Cygwin then do
         # for x32
-		#if [ "$ENVPLATFOM" == "MINGW64_NT-10.0" ]; then 
+		#if [ "$ENVPLATFOM" == "CYGWIN_NT-10.0" ]; then 
         #apt-cyg install mingw64-i686-openal mingw64-i686-SDL2 mingw64-i686-qt5-base mingw64-i686-freetype2 mingw64-i686-gcc-g++ mingw64-i686-ncurses #mingw64-i686-clang #mingw64-i686-llvm 
         #
 		#else
