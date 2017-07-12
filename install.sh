@@ -93,7 +93,7 @@ case $ENVTYPE in
 		
 	    apt-cyg update
 	    
-	    apt-cyg install git cmake cygport libboost-devel libopenal-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libfreetype-devel gcc-g++ make nasm ncurses w32api-headers clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
+	    apt-cyg install git cmake cygport gcc-fortran diffutils binutils libass-devel autogen libxml2-devel libfftw3-devel libchromaprint-devel texinfo libboost-devel libopenal-devel libogg-devel libvorbis-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libgmp-devel libnettle-devel libfreetype-devel gnutls-devel ladspa-sdk gcc-g++ make nasm ncurses gettext-devel w32api-headers doxygen wget lynx clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
         
         # If use MinGW under Cygwin then do (not implement/tested yet )
         # for x32
@@ -373,10 +373,32 @@ fi
 cd ffmpeg
 git pull
 git checkout cmake
+
 if [ "$ENVTYPE" == "Cygwin" ]; then
-cd "$DEPENDENCIES"/ffmpeg
-./configure --prefix="$DEPENDENCIES"/ffmpeg/install
-make -j$CORES
+
+cd "$DEPENDENCIES"
+if [ ! -f /bin/libbluray ]; then
+git clone https://github.com/cygwinports-extras/libbluray.git cygwin-ports-libbluray
+cd "$DEPENDENCIES"/cygwin-ports-libbluray
+echo -e "\n>> Building FFMPEG deps libbluray use Cygport"
+cygport ./libbluray.cygport download
+cygport ./libbluray.cygport all
+
+if [ $? -ne 0 ]; then
+  echo -e "Failed to build FFMPEG deps libbluray.\nExiting..."
+  exit 1
+fi
+
+fi
+
+cd "$DEPENDENCIES"
+#git clone https://git.code.sf.net/p/cygwin-ports/ffmpeg cygwin-ports-ffmpeg
+git clone https://github.com/cygwinports-extras/ffmpeg.git cygwin-ports-ffmpeg
+cd "$DEPENDENCIES"/cygwin-ports-ffmpeg
+echo -e "\n>> Building FFMPEG libraries use Cygport"
+cygport ./ffmpeg.cygport download
+cygport ./ffmpeg.cygport all
+#cp -rv "$DEPENDENCIES"/cygwin-ports-ffmpeg
 else
 mkdir "$DEPENDENCIES"/ffmpeg/build 
 cd "$DEPENDENCIES"/ffmpeg/build
@@ -510,7 +532,7 @@ cd "$BASE"
 
 fi
 
-#BUILD CALLFF
+#BUILD CALLFF #Windows support not implement yet
 echo -e "\n>> Building CallFF"
  mkdir "$DEPENDENCIES"/callff/build
  cd "$DEPENDENCIES"/callff/build
@@ -545,8 +567,17 @@ cd "$BASE"
 
 #BUILD TERRA
 if [ $BUILD_TERRA ]; then
-    echo -e "\n>> Building Terra"
-    cd "$DEPENDENCIES"/terra
+    echo -e "\n>>Prepare to building Terra"
+	if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then
+	echo -e "\n>>for build Terra need clang+llvm 3.5"
+	cd "$DEPENDENCIES"
+	wget http://releases.llvm.org/3.5.0/LLVM-3.5.0-win32.exe -O "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+    "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+	else
+	echo -e "\n>> Building Terra"
+	fi
+	cd "$DEPENDENCIES"/terra
+	
     make -j$CORES
 
     if [ $? -ne 0 ]; then

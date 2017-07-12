@@ -40,6 +40,10 @@ if [ -d "$DEPENDENCIES"/openal ]; then
 fi
 
 if [ -d "$DEPENDENCIES"/ffmpeg ]; then
+ if [ "$ENVTYPE" == "Cygwin" ]; then
+ echo -e "For dot his uses Cygport"
+  BUILD_FFMPEG=false
+ else
   BUILD_FFMPEG=true
 fi
 
@@ -135,8 +139,8 @@ case $ENVTYPE in
       -DCMAKE_CXX_STANDARD=14 \
       -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
       -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
-      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
-      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/Lib/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/Lib/libRakNetLibStatic.a \
       -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
       -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
 		
@@ -213,8 +217,8 @@ case $ENVTYPE in
       -DCallFF_INCLUDES="${CALLFF_LOCATION}"/include \
       -DCallFF_LIBRARY="${CALLFF_LOCATION}"/build/src/libcallff.a \	  
       -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
-      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
-      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/Lib/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/Lib/libRakNetLibStatic.a \
       -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
       -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
 		
@@ -228,7 +232,7 @@ case $ENVTYPE in
    
         if [ $BUILD_OPENAL ]; then
          CMAKE_PARAMS="$CMAKE_PARAMS \
-        -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include "
+        -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include/AL "
          export OPENALDIR="${OPENAL_LOCATION}"/install
          export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
         fi
