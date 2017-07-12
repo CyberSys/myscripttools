@@ -137,8 +137,8 @@ case $ENVTYPE in
 	  -DCallFF_INCLUDES="${CALLFF_LOCATION}"/include \
       -DCallFF_LIBRARY="${CALLFF_LOCATION}"/build/src/libcallff.a \	
       -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
-      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
-      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/Lib/LibStatic/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/Lib/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/Lib/libRakNetLibStatic.a \
       -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
       -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
 		
@@ -244,14 +244,14 @@ case $ENVTYPE in
    
    if [ $BUILD_OPENAL ]; then
     CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/include "
+      -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include "
       export OPENALDIR="${OPENAL_LOCATION}"/install
       export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
    fi
    
    if [ $BUILD_FFMPEG ]; then
     CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/include "
+      -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include "
       export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
       export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
    fi
