@@ -69,7 +69,7 @@ case $ENVTYPE in
     	#BUILD_SDL2=true    	
         #BUILD_OSG=true
         #BUILD_BULLET=true
-        BUILD_MYGUI=true
+        BUILD_MYGUI=true 
         #BUILD_OPENAL=true
     	#BUILD_FFMPEG=true
         BUILD_TERRA=true
@@ -163,7 +163,7 @@ echo -e "\n>> Checking which GNU/Linux distro is installed"
         #BUILD_OSG=true         
         #BUILD_MYGUI=true
         #BUILD_OPENAL=true
-    	#BUILD_FFMPEG=true #Fix me building not work
+    	#BUILD_FFMPEG=true #Fix me building with cmake not work
         #BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
   ;;
 
@@ -183,12 +183,12 @@ echo -e "\n>> Checking which GNU/Linux distro is installed"
         BUILD_BULLET=true
         BUILD_UNSHIELD=true
     	#BUILD_BOOST=true #Fix me building not work
-    	#BUILD_SDL2=true 
+    	#BUILD_SDL2=true # Not implement yet
       sudo apt-get build-dep openscenegraph   	
-        BUILD_OSG=true         
+        BUILD_OSG=true  #Fix me build looks fine but have cmake err Could NOT find OpenSceneGraph: Found unsuitable version "..", but required is at least "3.3.4"        
         BUILD_MYGUI=true
         BUILD_OPENAL=true
-    	#BUILD_FFMPEG=true #Fix me building not work
+    	#BUILD_FFMPEG=true #Fix me building with cmake not work & have some final link errs with OpenMW/TES3MP
         #BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
   ;;
 
@@ -234,11 +234,18 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
+git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
+git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet 
+
 if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
+#  osg on steroids) (speed up OpenMW team fork) Warn! if use it then comment com git chekout in build section OSG !
+#if [ $BUILD_OSG ]; then git clone https://github.com/OpenMW/osg.git "$DEPENDENCIES"/osg ; fi
+
 if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
+
 if [ $BUILD_BULLET ]; then git clone https://github.com/bulletphysics/bullet3.git "$DEPENDENCIES"/bullet ; fi
-git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet --depth 1
-if [ $BUILD_TERRA ]; then git clone https://github.com/zdevito/terra.git "$DEPENDENCIES"/terra ;
+
+if [ $BUILD_TERRA ]; then git clone https://github.com/zdevito/terra.git "$DEPENDENCIES"/terra 
 
 elif [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # fixme So... OR func don't work & where is arch type i686 OR x86_64 OR etc...?
 echo -e "\n>> Downloading terra Windows binary "
@@ -361,11 +368,17 @@ fi
 cd ffmpeg
 git pull
 git checkout cmake
+if [ "$ENVTYPE" == "Linux" -o "GNU/Linux" ]; then
+cd "$DEPENDENCIES"/ffmpeg
+./configure --prefix="$DEPENDENCIES"/ffmpeg/install
+make -j$CORES
+else
 mkdir "$DEPENDENCIES"/ffmpeg/build 
 cd "$DEPENDENCIES"/ffmpeg/build
 rm CMakeCache.txt
 cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/ffmpeg/install -DCMAKE_BUILD_TYPE=Release ..
 make -j$CORES
+fi
 
 if [ $? -ne 0 ]; then
   echo -e "Failed to build FFMPEG.\nExiting..."
@@ -380,7 +393,7 @@ fi
 
 #BUILD OPENSCENEGRAPH
 if [ $BUILD_OSG ]; then
- if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # not work & not right (msys2 have repo) fix it!
+ if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # not work & not right (msys2 & Cygwin have repo) fix it!
   # Win-specific prebuld steps
    echo -e "\n>> Building OpenSceneGraph 3rdparty deps"  
    git clone --recursive https://github.com/CyberSys/osg-3rdparty-cmake "$DEPENDENCIES"/osg_3rdparty
@@ -420,13 +433,18 @@ echo -e "\n>> Building OpenSceneGraph"
     git checkout tags/OpenSceneGraph-3.5.4
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
-    cmake ..
+    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
     make -j$CORES
 
     if [ $? -ne 0 ]; then
       echo -e "Failed to build OpenSceneGraph.\nExiting..."
       exit 1
     fi
+
+    make install
 
     cd "$BASE"
  
@@ -461,7 +479,8 @@ if [ ! -e mygui ]; then
   git clone https://github.com/MyGUI/mygui
 fi
 cd mygui
-git pull
+#git pull
+git checkout tags/MyGUI3.2.2
 mkdir "$DEPENDENCIES"/mygui/build 
 cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
@@ -487,6 +506,20 @@ cd "$BASE"
 
 fi
 
+#BUILD CALLFF
+echo -e "\n>> Building CallFF"
+ mkdir "$DEPENDENCIES"/callff/build
+ cd "$DEPENDENCIES"/callff/build
+ cmake ..
+ make -j$CORES
+
+  if [ $? -ne 0 ]; then
+        echo -e "Failed to build CallFF.\nExiting..."
+        exit 1
+  fi
+
+cd "$BASE"
+
 #BUILD RAKNET
 echo -e "\n>> Building RakNet"
 cd "$DEPENDENCIES"/raknet
@@ -508,7 +541,16 @@ cd "$BASE"
 
 #BUILD TERRA
 if [ $BUILD_TERRA ]; then
+   echo -e "\n>>Prepare to building Terra"
+   if [ "$ENVTYPE" == "Linux" -o "GNU/Linux" ]; then
+   cd "$DEPENDENCIES"
+   echo -e "\n>>for build Terra need clang+llvm 3.5"
+   wget http://releases.llvm.org/3.5.0/clang+llvm-3.5.0-i686-fedora20.tar.xz -O "$DEPENDENCIES"/clang+llvm-3.5.0-i686-fedora20.tar.xz
+    tar -xpJf "$DEPENDENCIES"/clang+llvm-3.5.0-i686-fedora20.tar.xz
+    mv clang+llvm-* clang_llvm-3.5.0
+    else
     echo -e "\n>> Building Terra"
+    fi
     cd "$DEPENDENCIES"/terra
     make -j$CORES
 
