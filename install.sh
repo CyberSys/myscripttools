@@ -34,31 +34,53 @@ case $ENVTYPE in
     #Check Windows Env And Install Deps
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
+	"MINGW64*" | "MINGW32_NT-5.0" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MINGW32_NT-6.2" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
 	
 		if [ "$ENVREL" == "1.0.11(0.46/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
 		echo -e "You seem to be running MSYS 1 MINGW32 Env"
 		# TODO Here
 		# Msys1 prepare
 		
+		if [ ! -d /opt ]; then
+		mkdir {/opt,/opt/bin}
+		fi
+		
 		#YYPkg is a small, fast, platform-agnostic package manager. It can be used to manage any directory.
 		#It is built to help cross-compilation setups and it works both for and on Windows.
 		
-		if [ ! -f /usr/bin/yypkg-1.4.0.exe ]; then
-		wget http://winbuilds.org/1.4.0/yypkg-1.4.0.exe -O /usr/bin/yypkg-1.4.0.exe
+		if [ ! -f /opt/yypkg-1.4.0.exe ]; then
+		#wget http://win-builds.org/1.5.0/win-builds-1.5.0.exe -O /opt/bin/win-builds-1.5.0.exe
+		#win-builds-1.5.0.exe --deploy --host msys
+		#echo source /opt/windows_32/bin/win-builds-switch >/dev/null >> ~/.profile
+		
+		wget http://winbuilds.org/1.4.0/yypkg-1.4.0.exe -O /opt/bin/yypkg-1.4.0.exe
 		yypkg-1.4.0.exe --deploy --host msys
 		echo '. /opt/windows_32/bin/win-builds-switch 32' >> ~/.profile
+		
+		fi
+		export PATH="/opt/bin:$PATH"
+		export YYPREFIX=/opt/windows_32
+
+		
+		if [ ! -f /opt/bin/GetGnuWin.exe ]; then
+		wget https://sourceforge.net/projects/getgnuwin32/files/getgnuwin32/0.6.30/GetGnuWin32-0.6.3.exe -O /opt/bin/GetGnuWin.exe
+		GetGnuWin.exe 
 		fi
 		
+		# its tools to old & not work correct
+		#mingw-get update 
+		#mingw-get install msys-dvlpr #wget 
 		
+		
+		USEMXE=true #build deps uses MXE
 		
 		BUILD_UNSHIELD=true
-    	#BUILD_BOOST=true
+    	#BUILD_BOOST=true # build not work
     	#BUILD_SDL2=true    	
-        BUILD_OSG=true
+        #BUILD_OSG=true
         #BUILD_BULLET=true
         BUILD_MYGUI=true
-        BUILD_OPENAL=true
+        #BUILD_OPENAL=true
     	#BUILD_FFMPEG=true
         BUILD_TERRA=true
 		
@@ -255,10 +277,11 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
+git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
+git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet
 if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
 if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
 if [ $BUILD_BULLET ]; then git clone https://github.com/bulletphysics/bullet3.git "$DEPENDENCIES"/bullet ; fi
-git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet --depth 1
 if [ $BUILD_TERRA ]; then git clone https://github.com/zdevito/terra.git "$DEPENDENCIES"/terra ;
 
 elif [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # fixme So... OR func don't work & where is arch type i686 OR x86_64 OR etc...?
@@ -306,6 +329,29 @@ echo -e "\n>> Setup compiler setings"
     export CC=gcc-6
   fi
 
+if [ $USEMXE ]; then  
+   
+ echo -e "\n>> Uses MXE to build OpenMW/TES3MP deps.\nExiting..."
+   cd "$DEPENDENCIES"
+   git clone https://github.com/mxe/mxe.git mxe
+   cd "$DEPENDENCIES"/mxe
+   
+   #TARGET="i686-w64-mingw32.shared"
+   #TARGET="i686-w64-mingw32.shared.posix"
+   #TARGET="i686-w64-mingw32.shared.cmake"
+   #MXE_TARGETS='x86_64-w64-mingw32.static i686-w64-mingw32.static'
+   MXE="$DEPENDENCIES/mxe/usr"
+   PREFIX="$DEPENDENCIES/3rdParty"
+    make TARGET="i686-w64-mingw32.shared" minizip jasper openal sdl2 ffmpeg boost bullet openscenegraph qt5 qt3d -j$CORES
+
+    if [ $? -ne 0 ]; then
+      echo -e "Failed to build OpenMW/TES3MP deps.\nExiting..."
+      exit 1
+    fi
+
+  export OSG_3RDPARTY_DIR="$DEPENDENCIES"/3rdParty
+fi
+  
 #BUILD_UNSHIELD
 if [ $BUILD_UNSHIELD ]; then
     echo -e "\n>> Building unshield tools"
@@ -326,7 +372,10 @@ if [ $BUILD_UNSHIELD ]; then
       fi
 
     make install
-    
+		
+	export PATH="$DEPENDENCIES"/unshield/install/bin:"$PATH"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/unshield/install/lib
+        
     cd "$BASE"
 fi
 
@@ -427,9 +476,16 @@ if [ $BUILD_OSG ]; then
    echo -e "\n>> Building OpenSceneGraph 3rdparty deps"  
    git clone --recursive https://github.com/CyberSys/osg-3rdparty-cmake "$DEPENDENCIES"/osg_3rdparty
    mkdir "$DEPENDENCIES"/osg_3rdparty/build
-   cd "$DEPENDENCIES"/osg_3rdparty/build    
-    rm CMakeCache.txt
-	if [ "$ENVTYPE" == "Msys" ]; then
+   cd "$DEPENDENCIES"/osg_3rdparty/build 
+   rm CMakeCache.txt
+   echo -e "\n>> Uses MXE to build "
+   git clone https://github.com/mxe/mxe.git mxe
+   cd "$DEPENDENCIES"/osg_3rdparty/build/mxe 
+   
+   export MXE="$DEPENDENCIES/osg_3rdparty/build/mxe/usr"
+   export PREFIX="$DEPENDENCIES/osg_3rdparty/install"
+
+CUT = "	if [ "$ENVTYPE" == "Msys" ]; then
 	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg_3rdparty/install \
      -DZLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/zlib \
      -DMINIZIP_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/minizip \
@@ -455,22 +511,22 @@ if [ $BUILD_OSG ]; then
      -DGLUT_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/glut \
      #-DCURL_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/curl  
      -DCMAKE_BUILD_TYPE=Release ..
-	 fi
-    make -j$CORES
+	 fi "
+    make TARGET="i686-w64-mingw32.shared" minizip jasper -j$CORES
 
     if [ $? -ne 0 ]; then
       echo -e "Failed to build OpenSceneGraph 3rdparty deps.\nExiting..."
       exit 1
     fi
 
-  export OSG_3RDPARTY_DIR="$DEPENDENCIES"/osg_3rdparty/3rdParty
+  export OSG_3RDPARTY_DIR="$DEPENDENCIES"/osg_3rdparty/install
 
     cd "$BASE"
   
  
   else #Add other platform-specific steps
    echo -e "\n>>Warning!!! build OpenSceneGraph 3rdparty deps first before try build osg"
-  fi
+  fi 
 echo -e "\n>> Building OpenSceneGraph" 
     cd "$DEPENDENCIES"/osg
     mkdir "$DEPENDENCIES"/osg/build
@@ -478,9 +534,15 @@ echo -e "\n>> Building OpenSceneGraph"
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
 	if [ "$ENVTYPE" == "Msys" ]; then
-	cmake -G "MSYS Makefiles" ..
+	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
 	else
-    cmake ..
+     cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
 	fi
     make -j$CORES
 
@@ -489,6 +551,8 @@ echo -e "\n>> Building OpenSceneGraph"
       exit 1
     fi
 
+	make install
+	
     cd "$BASE"
  
 fi
@@ -564,6 +628,20 @@ cd "$BASE"
 
 fi
 
+#BUILD CALLFF #Windows support not implement yet
+echo -e "\n>> Building CallFF"
+ mkdir "$DEPENDENCIES"/callff/build
+ cd "$DEPENDENCIES"/callff/build
+ cmake ..
+ make -j$CORES
+
+  if [ $? -ne 0 ]; then
+        echo -e "Failed to build CallFF.\nExiting..."
+        exit 1
+  fi
+
+cd "$BASE"
+
 #BUILD RAKNET
 echo -e "\n>> Building RakNet"
 cd "$DEPENDENCIES"/raknet
@@ -589,8 +667,17 @@ cd "$BASE"
 
 #BUILD TERRA
 if [ $BUILD_TERRA ]; then
-    echo -e "\n>> Building Terra"
+    echo -e "\n>>Prepare to building Terra"
+	if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then
+	echo -e "\n>>for build Terra need clang+llvm 3.5"
+	cd "$DEPENDENCIES"
+	wget http://releases.llvm.org/3.5.0/LLVM-3.5.0-win32.exe -O "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+    "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+	else
+	echo -e "\n>> Building Terra"
+	fi
     cd "$DEPENDENCIES"/terra
+	
     make -j$CORES
 
     if [ $? -ne 0 ]; then
