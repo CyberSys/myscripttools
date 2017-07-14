@@ -92,8 +92,8 @@ case $ENVTYPE in
 	    fi
 		
 	    apt-cyg update
-	    
-	    apt-cyg install git cmake cygport gcc-fortran diffutils binutils libass-devel autogen libxml2-devel libfftw3-devel libchromaprint-devel texinfo libboost-devel libopenal-devel libogg-devel libvorbis-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libgmp-devel libnettle-devel libfreetype-devel gnutls-devel ladspa-sdk gcc-g++ make nasm ncurses gettext-devel w32api-headers doxygen wget lynx clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
+	    # need for use MXE
+	    apt-cyg install git cmake p7zip bison flex gperf intltool scons ruby cygport gcc-fortran diffutils binutils libass-devel autogen libxml2-devel libfftw3-devel libchromaprint-devel texinfo libgdk_pixbuf2.0-devel libboost-devel libopenal-devel libogg-devel libvorbis-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libgmp-devel libnettle-devel libfreetype-devel gnutls-devel ladspa-sdk gcc-g++ make nasm ncurses gettext-devel w32api-headers doxygen wget lynx clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
         
         # If use MinGW under Cygwin then do (not implement/tested yet )
         # for x32
@@ -106,14 +106,16 @@ case $ENVTYPE in
         #
 		#fi
 		
+		USEMXE=true #build deps uses MXE
+		
         BUILD_UNSHIELD=true
     	#BUILD_BOOST=true 
     	#BUILD_SDL2=true # not implement/tested yet   	
-        BUILD_OSG=true #Fix me building not work on cygwin jpeg tiff jasper etc...
-        BUILD_BULLET=true
+        #BUILD_OSG=true #Fix me building not work on cygwin jpeg tiff jasper etc...
+        #BUILD_BULLET=true
         BUILD_MYGUI=true
         #BUILD_OPENAL=true
-    	BUILD_FFMPEG=true #Fix me building not work
+    	#BUILD_FFMPEG=true #Fix me building not work
         BUILD_TERRA=true
         
 	   ;; 
@@ -293,6 +295,30 @@ echo -e "\n>> Setup compiler setings"
     export CC=gcc-6
   fi
 
+ 
+ if [ $USEMXE ]; then  
+   
+ echo -e "\n>> Uses MXE to build OpenMW/TES3MP deps.\nExiting..."
+   cd "$DEPENDENCIES"
+   git clone https://github.com/mxe/mxe.git mxe
+   cd "$DEPENDENCIES"/mxe
+   
+   #TARGET="i686-w64-mingw32.shared"
+   #TARGET="i686-w64-mingw32.shared.posix"
+   #TARGET="i686-w64-mingw32.shared.cmake"
+   #MXE_TARGETS='x86_64-w64-mingw32.static i686-w64-mingw32.static'
+   export MXE="$DEPENDENCIES/mxe/usr"
+   export PREFIX="$DEPENDENCIES/3rdParty"
+    make TARGET="i686-w64-mingw32.shared" minizip ffmpeg openscenegraph bullet -j$CORES 
+
+    if [ $? -ne 0 ]; then
+      echo -e "Failed to build OpenMW/TES3MP deps.\nExiting..."
+      exit 1
+    fi
+
+  export OSG_3RDPARTY_DIR="$DEPENDENCIES"/3rdParty
+fi  
+  
 #BUILD_UNSHIELD
 if [ $BUILD_UNSHIELD ]; then
     echo -e "\n>> Building unshield tools"
@@ -309,6 +335,9 @@ if [ $BUILD_UNSHIELD ]; then
       fi
 
     make install
+	
+	export PATH="$DEPENDENCIES"/unshield/install/bin:"$PATH"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/unshield/install/lib
     
     cd "$BASE"
 fi
@@ -421,23 +450,40 @@ fi
 if [ $BUILD_OSG ]; then
  if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # not work & not right (msys2 have repo) fix it!
   # Win-specific prebuld steps
-   echo -e "\n>> Building OpenSceneGraph 3rdparty deps"  
-   git clone --recursive https://github.com/CyberSys/osg-3rdparty-cmake "$DEPENDENCIES"/osg_3rdparty
-   mkdir "$DEPENDENCIES"/osg_3rdparty/build
-   cd "$DEPENDENCIES"/osg_3rdparty/build    
+   echo -e "\n>> Building OpenSceneGraph 3rdparty deps.\nExiting..."
+   cd "$DEPENDENCIES"
+   git clone --recursive https://github.com/CyberSys/osg-3rdparty-cmake.git osg_deps
+   cd "$DEPENDENCIES"/osg_deps
+   # Remove because is already have cmake support
+   rm -rf {./zlib,./minizip,./libpng,./libjpeg,./libtiff,./jasper,./freetype,./glut,./curl}
+ 
+   #git clone https://github.com/CyberSys/zlib.git zlib
+   git clone https://github.com/nmoinvaz/minizip.git minizip    
+   #git clone https://github.com/CyberSys/libpng.git libpng
+   #git clone https://github.com/CyberSys/libjpeg.git libjpeg
+   #git clone https://github.com/CyberSys/libtiff.git libtiff
+   #git clone https://github.com/CyberSys/jasper.git jasper
+   #git clone https://github.com/CyberSys/curl.git curl
+   #git clone https://github.com/CyberSys/glut.git glut #is don't have cmake
+   #git clone https://github.com/CyberSys/giflib.git giflib # is don't have cmake
+   
+   mkdir "$DEPENDENCIES"/osg_deps/build
+   cd "$DEPENDENCIES"/osg_deps/build    
     rm CMakeCache.txt
-    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg_3rdparty/install \
-     -DZLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/zlib \
-     -DMINIZIP_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/minizip \
-     -DLIBPNG_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libpng \
-     -DLIBJPEG_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libjpeg \
+    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg_deps/install \ 
+	-DMINIZIP_SOURCE_DIR="$DEPENDENCIES"/osg_deps/minizip \
+	-DCMAKE_BUILD_TYPE=Release ..
+     #-DZLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/zlib 
+     
+     #-DLIBPNG_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libpng 
+     #-DLIBJPEG_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libjpeg 
      #-DLIBJASPER_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/jasper 
-     -DLIBTIFF_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libtiff \ 
-     -DGIFLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/giflib  \
-     -DFREETYPE_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/freetype \
-     -DGLUT_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/glut \
+     #-DLIBTIFF_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/libtiff  
+     #-DGIFLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/giflib  
+     #-DFREETYPE_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/freetype 
+     #-DGLUT_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/glut 
      #-DCURL_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/curl  
-     -DCMAKE_BUILD_TYPE=Release ..
+     
     make -j$CORES
 
     if [ $? -ne 0 ]; then
@@ -445,7 +491,7 @@ if [ $BUILD_OSG ]; then
       exit 1
     fi
 
-  export OSG_3RDPARTY_DIR="$DEPENDENCIES"/osg_3rdparty/3rdParty
+  export OSG_3RDPARTY_DIR="$DEPENDENCIES"/osg_deps/install
 
     cd "$BASE"
   
