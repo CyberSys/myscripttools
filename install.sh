@@ -250,10 +250,11 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
+git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
+git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet 
 if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
 if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
 if [ $BUILD_BULLET ]; then git clone https://github.com/bulletphysics/bullet3.git "$DEPENDENCIES"/bullet ; fi
-git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet --depth 1
 if [ $BUILD_TERRA ]; then git clone https://github.com/zdevito/terra.git "$DEPENDENCIES"/terra ;
 
 elif [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # fixme So... OR func don't work & where is arch type i686 OR x86_64 OR etc...?
@@ -317,6 +318,7 @@ if [ $BUILD_UNSHIELD ]; then
       fi
 
     make install
+    
     
     cd "$BASE"
 fi
@@ -437,10 +439,13 @@ if [ $BUILD_OSG ]; then
 echo -e "\n>> Building OpenSceneGraph" 
     cd "$DEPENDENCIES"/osg
     mkdir "$DEPENDENCIES"/osg/build
-    git checkout tags/OpenSceneGraph-3.5.4
+    git checkout tags/OpenSceneGraph-3.4.0
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
-    cmake ..
+    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+    -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+    -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
     make -j$CORES
 
     if [ $? -ne 0 ]; then
@@ -506,6 +511,20 @@ make install
 cd "$BASE"
 
 fi
+
+#BUILD CALLFF #Windows support not implement yet
+echo -e "\n>> Building CallFF"
+ mkdir "$DEPENDENCIES"/callff/build
+ cd "$DEPENDENCIES"/callff/build
+ cmake ..
+ make -j$CORES
+
+  if [ $? -ne 0 ]; then
+        echo -e "Failed to build CallFF.\nExiting..."
+        exit 1
+  fi
+
+cd "$BASE"
 
 #BUILD RAKNET
 echo -e "\n>> Building RakNet"

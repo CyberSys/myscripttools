@@ -43,7 +43,8 @@ if [ -d "$DEPENDENCIES"/ffmpeg ]; then
   BUILD_FFMPEG=true
 fi
 
-#LOCATIONS OF RAKNET AND TERRA 
+#DEPENDENCY LOCATIONS
+CALLFF_LOCATION="$DEPENDENCIES"/callff
 RAKNET_LOCATION="$DEPENDENCIES"/raknet
 TERRA_LOCATION="$DEPENDENCIES"/terra
 #Set for other deps if needed 
@@ -127,6 +128,8 @@ case $ENVTYPE in
   CMAKE_PARAMS="-DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}"  -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=TRUE \
       -DCMAKE_CXX_STANDARD=14 \
       -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
+      -DCallFF_INCLUDES="${CALLFF_LOCATION}"/include \
+      -DCallFF_LIBRARY="${CALLFF_LOCATION}"/build/src/libcallff.a \
       -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
       -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/lib/LibStatic/libRakNetLibStatic.a \
       -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/LibStatic/libRakNetLibStatic.a \
@@ -142,47 +145,49 @@ case $ENVTYPE in
    
    if [ $BUILD_OPENAL ]; then
     CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/include "
+      -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include/AL "
       export OPENALDIR="${OPENAL_LOCATION}"/install
       export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
    fi
    
    if [ $BUILD_FFMPEG ]; then
     CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/include "
+      -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include "
       export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
       export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
    fi
    
    if [ $BUILD_MYGUI ]; then
     CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DMYGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/include "
+      -DMYGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/install/include "
       export MYGUI_HOME="${MYGUI_LOCATION}"/install
       export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
    fi
  
   if [ $BUILD_OSG ]; then
     CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DOPENTHREADS_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOPENTHREADS_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOPENTHREADS_LIBRARY="${OSG_LOCATION}"/build/lib/libOpenThreads.so \
-      -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSG_LIBRARY="${OSG_LOCATION}"/build/lib/libosg.so \
-      -DOSGANIMATION_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGANIMATION_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/build/lib/libosgAnimation.so \
-      -DOSGDB_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGDB_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGDB_LIBRARY="${OSG_LOCATION}"/build/lib/libosgDB.so \
-      -DOSGFX_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGFX_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGFX_LIBRARY="${OSG_LOCATION}"/build/lib/libosgFX.so \
-      -DOSGGA_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGGA_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGGA_LIBRARY="${OSG_LOCATION}"/build/lib/libosgGA.so \
-      -DOSGPARTICLE_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGPARTICLE_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGPARTICLE_LIBRARY="${OSG_LOCATION}"/build/lib/libosgParticle.so \
-      -DOSGTEXT_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGTEXT_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGTEXT_LIBRARY="${OSG_LOCATION}"/build/lib/libosgText.so \
-      -DOSGUTIL_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGUTIL_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGUTIL_LIBRARY="${OSG_LOCATION}"/build/lib/libosgUtil.so \
-      -DOSGVIEWER_INCLUDE_DIR="${OSG_LOCATION}"/include \
+      -DOSGVIEWER_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGVIEWER_LIBRARY="${OSG_LOCATION}"/build/lib/libosgViewer.so"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OSG_LOCATION}"/install/lib
+    export OSG_ROOT="${OSG_LOCATION}"/install
   fi
   
   if [ $BUILD_BULLET ]; then
