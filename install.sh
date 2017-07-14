@@ -62,7 +62,7 @@ case $ENVTYPE in
 		echo -e "You seem to be running MSYS 2 MINGW32 Env"				
 		 pacman -Sy base-devel mingw-w64-i686-toolchain   
 		
-		 pacman -Sy git mingw-w64-i686-cmake mingw-w64-i686-boost mingw-w64-i686-openal mingw-w64-i686-OpenSceneGraph mingw-w64-i686-bullet mingw-w64-i686-qt5 mingw-w64-i686-ffmpeg mingw-w64-i686-SDL2 mingw-w64-i686-ncurses mingw-w64-i686-clang mingw-w64-i686-llvm #unshield #mygui  #clang35 llvm35 #libxkbcommon-x11
+		 pacman -Sy git wget mingw-w64-i686-cmake mingw-w64-i686-boost mingw-w64-i686-openal mingw-w64-i686-OpenSceneGraph mingw-w64-i686-bullet mingw-w64-i686-qt5 mingw-w64-i686-ffmpeg mingw-w64-i686-SDL2 mingw-w64-i686-ncurses mingw-w64-i686-clang mingw-w64-i686-llvm #unshield #mygui  #clang35 llvm35 #libxkbcommon-x11
 		
 	    #echo -e "\nIf you wish to build OpenSceneGraph from source\nhttps://wiki.openmw.org/index.php?title=Development_Environment_Setup#Build_and_install_OSG\n\nType YES if you want the script to do it automatically (THIS IS BROKEN ATM)\nIf you already have it installed or want to do it manually,\npress ENTER to continue"
         #read INPUT
@@ -317,7 +317,10 @@ if [ $BUILD_UNSHIELD ]; then
       fi
 
     make install
-    
+	
+	export PATH="$DEPENDENCIES"/unshield/install/bin:"$PATH"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/unshield/install/lib
+        
     cd "$BASE"
 fi
 
@@ -606,6 +609,13 @@ cd "$BASE"
 
 #BUILD TERRA
 if [ $BUILD_TERRA ]; then
+    echo -e "\n>>Prepare to building Terra"
+	if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then
+	echo -e "\n>>for build Terra need clang+llvm 3.5"
+	cd "$DEPENDENCIES"
+	wget http://releases.llvm.org/3.5.0/LLVM-3.5.0-win32.exe -O "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+    "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+	else
     echo -e "\n>> Building Terra"
     cd "$DEPENDENCIES"/terra
     make -j$CORES
