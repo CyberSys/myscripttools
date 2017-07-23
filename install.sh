@@ -1,6 +1,9 @@
 #!/bin/bash 
 
-
+if [ "$(whoami)" == 'root' ]; then 
+  echo "Ахтунг: под учетной записью рута работать отказываюсь!" 
+  exit 1 
+fi
 
 #NUMBER OF CPU CORES USED FOR COMPILATION
 if [ "$1" == "" ]; then
@@ -177,19 +180,19 @@ echo -e "\n>> Checking which GNU/Linux distro is installed"
             echo -e "Done!"
       fi
       sudo apt-get update
-      sudo apt-get install cmake git libopenal-dev qt5-default libopenscenegraph-3.4-dev libsdl2-dev libqt4-dev libboost-filesystem-dev libboost-thread-dev libboost-program-options-dev libboost-system-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libmygui-dev libunshield-dev cmake build-essential libqt4-opengl-dev g++ libncurses5-dev #clang llvm libclang-dev llvm-dev #llvm-3.5 clang-3.5 libclang-3.5-dev llvm-3.5-dev #libbullet-dev
+      sudo apt-get install cmake git libopenal-dev qt5-default libopenscenegraph-3.4-dev libsdl2-dev libqt4-dev libboost-filesystem-dev libboost-thread-dev libboost-program-options-dev libboost-system-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libmygui-dev libunshield-dev cmake build-essential libqt4-opengl-dev g++ gcc-multilib g++-multilib libncurses5-dev #clang llvm libclang-dev llvm-dev #llvm-3.5 clang-3.5 libclang-3.5-dev llvm-3.5-dev #libbullet-dev
      
       sudo apt-get build-dep bullet
-        BUILD_BULLET=true
-        BUILD_UNSHIELD=true
+        BUILD_BULLET=true # good
+        #BUILD_UNSHIELD=true # good
     	#BUILD_BOOST=true #Fix me building not work
     	#BUILD_SDL2=true # Not implement yet
       sudo apt-get build-dep openscenegraph   	
-        BUILD_OSG=true  #Fix me build looks fine but have cmake err Could NOT find OpenSceneGraph: Found unsuitable version "..", but required is at least "3.3.4"        
-        BUILD_MYGUI=true
-        BUILD_OPENAL=true
+        BUILD_OSG=true  # good      
+        BUILD_MYGUI=true # good
+        #BUILD_OPENAL=true # good
     	#BUILD_FFMPEG=true #Fix me building with cmake not work & have some final link errs with OpenMW/TES3MP
-        #BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
+        #BUILD_TERRA=true #Fix me building not work, Terra currently doesn't support any 32bit ABIs (stdcall, cdecl, etc.). LLVM/clang libraries that support gcc 5.1.* but not yet. src/tdebug.cpp:152:45: error: use of undeclared identifier 'REG_RIP'; did you mean 'REG_EIP'?
   ;;
 
   "fedora" )
@@ -237,9 +240,9 @@ git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
 git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
 git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet 
 
-if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
-#  osg on steroids) (speed up OpenMW team fork) Warn! if use it then comment com git chekout in build section OSG !
-#if [ $BUILD_OSG ]; then git clone https://github.com/OpenMW/osg.git "$DEPENDENCIES"/osg ; fi
+#if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
+#  osg on steroids) (speed up OpenMW team fork) Warn! if use it then comment com git checkout in build section OSG !
+if [ $BUILD_OSG ]; then git clone https://github.com/OpenMW/osg.git "$DEPENDENCIES"/osg ; fi
 
 if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
 
@@ -281,11 +284,17 @@ sed -i "s|Y #key for switch chat mode enabled/hidden/disabled|Right Alt|g" "${KE
 echo -e "\n>> Setup compiler setings"
  export CODE_COVERAGE=1
   
-  if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0; 
+  if [ "${CC}" == "clang" -o "${COMPILER_NAME}" == "Clang" ]; then export CODE_COVERAGE=0; 
   else 
+   echo -e "Switch to gcc compiler"
     export COMPILER_NAME=gcc
-    export CXX=g++-6
     export CC=gcc-6
+    export CXX=g++-6
+    export AR=ar
+    export LINKER=ld
+    export NM=nm
+    export OBJDUMP=objdump
+    export RANLIB=ranlib 
   fi
 
 #BUILD_UNSHIELD
@@ -304,6 +313,9 @@ if [ $BUILD_UNSHIELD ]; then
       fi
 
     make install
+    
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/install/unshield/lib
+    export PATH="$DEPENDENCIES"/install/unshield/bin:"$PATH"
     
     cd "$BASE"
 fi
@@ -393,7 +405,7 @@ fi
 
 #BUILD OPENSCENEGRAPH
 if [ $BUILD_OSG ]; then
- if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # not work & not right (msys2 & Cygwin have repo) fix it!
+ if [ $BUILD_OSG_DEPS ]; then # not work & not right (msys2 & Cygwin have repo) fix it!
   # Win-specific prebuld steps
    echo -e "\n>> Building OpenSceneGraph 3rdparty deps"  
    git clone --recursive https://github.com/CyberSys/osg-3rdparty-cmake "$DEPENDENCIES"/osg_3rdparty
@@ -430,7 +442,7 @@ if [ $BUILD_OSG ]; then
 echo -e "\n>> Building OpenSceneGraph" 
     cd "$DEPENDENCIES"/osg
     mkdir "$DEPENDENCIES"/osg/build
-    git checkout tags/OpenSceneGraph-3.5.4
+    #git checkout tags/OpenSceneGraph-3.5.4
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
     cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
@@ -541,13 +553,38 @@ cd "$BASE"
 
 #BUILD TERRA
 if [ $BUILD_TERRA ]; then
-   echo -e "\n>>Prepare to building Terra"
+   echo -e "\n>>Prepare to building Terra
+   WARN!!! Terra currently doesn't support any 32bit ABIs (stdcall, cdecl, etc.)."
    if [ "$ENVTYPE" == "Linux" -o "GNU/Linux" ]; then
    cd "$DEPENDENCIES"
    echo -e "\n>>for build Terra need clang+llvm 3.5"
    wget http://releases.llvm.org/3.5.0/clang+llvm-3.5.0-i686-fedora20.tar.xz -O "$DEPENDENCIES"/clang+llvm-3.5.0-i686-fedora20.tar.xz
     tar -xpJf "$DEPENDENCIES"/clang+llvm-3.5.0-i686-fedora20.tar.xz
-    mv clang+llvm-* clang_llvm-3.5.0
+    mv clang+llvm-3.5.0-i686-fedora20 clang_llvm-3.5.0
+    
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/clang_llvm-3.5.0/lib
+    export PATH="$DEPENDENCIES"/clang_llvm-3.5.0/bin:"$PATH"
+    export CXX_FLAGS="-I${DEPENDENCIES}/clang_llvm-3.5.0/include -march=native"
+    
+ echo -e "\n>> Setup compiler setings"
+
+  
+  if [ "${COMPILER_NAME}" == "gcc" ]; then 
+  echo -e "Switch to Clang compiler"
+    export CODE_COVERAGE=0
+    export COMPILER_NAME=Clang    
+    export LLVM_COMPILER_BIN="$DEPENDENCIES"/clang_llvm-3.5.0/bin
+    export LLVM_CONFIG="$DEPENDENCIES"/clang_llvm-3.5.0/bin/llvm-config
+    export CC="$DEPENDENCIES"/clang_llvm-3.5.0/bin/clang
+    export CXX="$DEPENDENCIES"/clang_llvm-3.5.0/bin/clang++
+    export AR="$DEPENDENCIES"/clang_llvm-3.5.0/bin/llvm-ar
+    export LINKER="$DEPENDENCIES"/clang_llvm-3.5.0/bin/llvm-link
+    export NM="$DEPENDENCIES"/clang_llvm-3.5.0/bin/llvm-nm
+    export OBJDUMP="$DEPENDENCIES"/clang_llvm-3.5.0/bin/llvm-objdump
+    export RANLIB="$DEPENDENCIES"/clang_llvm-3.5.0/bin/llvm-ranlib       
+  fi
+
+    
     else
     echo -e "\n>> Building Terra"
     fi
