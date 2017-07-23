@@ -1,6 +1,9 @@
 #!/bin/bash 
 
-
+if [ "$(whoami)" == 'root' ]; then 
+  echo "Ахтунг: под учетной записью рута работать отказываюсь!" 
+  exit 1 
+fi
 
 #NUMBER OF CPU CORES USED FOR COMPILATION
 if [ "$1" == "" ]; then
@@ -92,8 +95,8 @@ case $ENVTYPE in
 	    fi
 		
 	    apt-cyg update
-	    # need for use MXE
-	    apt-cyg install git cmake p7zip bison flex gperf intltool scons ruby cygport gcc-fortran diffutils binutils libass-devel autogen libxml2-devel libfftw3-devel libchromaprint-devel texinfo libgdk_pixbuf2.0-devel libboost-devel libopenal-devel libogg-devel libvorbis-devel libSDL2-devel libQt5Core-devel libQt53D-devel libncurses-devel libgmp-devel libnettle-devel libfreetype-devel gnutls-devel ladspa-sdk gcc-g++ make nasm ncurses gettext-devel w32api-headers doxygen wget lynx clang llvm libclang-devel libllvm3.5-devel #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
+	    #some need for use MXE
+	    apt-cyg install git cmake p7zip bison flex gperf intltool scons ruby cygport gcc-fortran diffutils binutils libass-devel autogen libgda5.0-devel libminizip-devel libxml2-devel libfftw3-devel libchromaprint-devel texinfo libgdk_pixbuf2.0-devel libboost-devel libopenal-devel libogg-devel libvorbis-devel libjpeg-devel libpng-devel libtiff-devel libgif-devel libjasper-devel libSDL2-devel libX11-devel libQt5Core-devel libQt53D-devel libncurses-devel libgmp-devel libnettle-devel libfreetype-devel lua5.1-devel gnutls-devel ladspa-sdk openssl-devel gcc-g++ make yasm ncurses gettext-devel w32api-headers doxygen wget lynx clang llvm libclang-devel libllvm3.5-devel subversion #libQtCore4-devel #cygwin64-gcc-g++ #cygwin64-w32api-headers   #& other deps etc...
         
         # If use MinGW under Cygwin then do (not implement/tested yet )
         # for x32
@@ -106,17 +109,17 @@ case $ENVTYPE in
         #
 		#fi
 		
-		USEMXE=true #build deps uses MXE
+		#USEMXE=true #build deps uses MXE
 		
-        BUILD_UNSHIELD=true
-    	#BUILD_BOOST=true 
+        BUILD_UNSHIELD=true # good
+    	#BUILD_BOOST=true # not tested yet
     	#BUILD_SDL2=true # not implement/tested yet   	
-        #BUILD_OSG=true #Fix me building not work on cygwin jpeg tiff jasper etc...
-        #BUILD_BULLET=true
+        BUILD_OSG=true #Fixme building not work on cygwin OpenThreads broken? ...
+        BUILD_BULLET=true #Not work: error MUST_IMPLEMENT_PLATFORM
         BUILD_MYGUI=true
-        #BUILD_OPENAL=true
-    	#BUILD_FFMPEG=true #Fix me building not work
-        BUILD_TERRA=true
+        #BUILD_OPENAL=true # not tested yet
+    	#BUILD_FFMPEG=true #Fixme building not work
+        #BUILD_TERRA=true #Fixme There is no solution to the problem for clang version & path detect func
         
 	   ;; 
 	*)
@@ -244,11 +247,13 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
 git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
-if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
+git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet 
+#if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
+#osg on steroids) (speed up OpenMW team fork)
+if [ $BUILD_OSG ]; then git clone https://github.com/OpenMW/osg.git "$DEPENDENCIES"/osg ; fi
 if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
 if [ $BUILD_BULLET ]; then git clone https://github.com/bulletphysics/bullet3.git "$DEPENDENCIES"/bullet ; fi
-git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet --depth 1
-if [ $BUILD_TERRA ]; then git clone https://github.com/zdevito/terra.git "$DEPENDENCIES"/terra ;
+if [ $BUILD_TERRA ]; then git clone https://github.com/zdevito/terra.git "$DEPENDENCIES"/terra 
 
 elif [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # fixme So... OR func don't work & where is arch type i686 OR x86_64 OR etc...?
 echo -e "\n>> Downloading terra Windows binary "
@@ -309,7 +314,7 @@ echo -e "\n>> Setup compiler setings"
    #MXE_TARGETS='x86_64-w64-mingw32.static i686-w64-mingw32.static'
    export MXE="$DEPENDENCIES/mxe/usr"
    export PREFIX="$DEPENDENCIES/3rdParty"
-    make TARGET="i686-w64-mingw32.shared" minizip ffmpeg openscenegraph bullet -j$CORES 
+    make TARGET="i686-w64-mingw32.shared" ffmpeg openscenegraph bullet -j$CORES 
 
     if [ $? -ne 0 ]; then
       echo -e "Failed to build OpenMW/TES3MP deps.\nExiting..."
@@ -448,13 +453,13 @@ fi
 
 #BUILD OPENSCENEGRAPH
 if [ $BUILD_OSG ]; then
- if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # not work & not right (msys2 have repo) fix it!
+ if [ $BUILD_OSG_DEPS ]; then # not work & not right (msys2 have repo) fix it!
   # Win-specific prebuld steps
    echo -e "\n>> Building OpenSceneGraph 3rdparty deps.\nExiting..."
    cd "$DEPENDENCIES"
    git clone --recursive https://github.com/CyberSys/osg-3rdparty-cmake.git osg_deps
    cd "$DEPENDENCIES"/osg_deps
-   # Remove because is already have cmake support
+   # Remove because is already have cmake support and create some err
    rm -rf {./zlib,./minizip,./libpng,./libjpeg,./libtiff,./jasper,./freetype,./glut,./curl}
  
    #git clone https://github.com/CyberSys/zlib.git zlib
@@ -490,6 +495,8 @@ if [ $BUILD_OSG ]; then
       echo -e "Failed to build OpenSceneGraph 3rdparty deps.\nExiting..."
       exit 1
     fi
+	
+	make install
 
   export OSG_3RDPARTY_DIR="$DEPENDENCIES"/osg_deps/install
 
@@ -502,10 +509,10 @@ if [ $BUILD_OSG ]; then
 echo -e "\n>> Building OpenSceneGraph" 
     cd "$DEPENDENCIES"/osg
     mkdir "$DEPENDENCIES"/osg/build
-    git checkout tags/OpenSceneGraph-3.5.4
+    git checkout tags/OpenSceneGraph-3.4.0 
     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
-    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+    cmake -DCMAKE_LEGACY_CYGWIN_WIN32=0 -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
     -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
     -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
     -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
@@ -558,6 +565,7 @@ cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
 cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
 -DFREETYPE_INCLUDE_DIR=/usr/include/freetype2/ \
+-DMYGUI_RENDERSYSTEM=4 \
 -DMYGUI_BUILD_DEMOS:BOOL=OFF \
 -DMYGUI_BUILD_DOCS:BOOL=OFF \
 -DMYGUI_BUILD_TEST_APP:BOOL=OFF \
@@ -578,7 +586,7 @@ cd "$BASE"
 
 fi
 
-#BUILD CALLFF #Windows support not implement yet
+#BUILD CALLFF #Windows support not implement yet (exept cygwin)
 echo -e "\n>> Building CallFF"
  mkdir "$DEPENDENCIES"/callff/build
  cd "$DEPENDENCIES"/callff/build
@@ -615,10 +623,11 @@ cd "$BASE"
 if [ $BUILD_TERRA ]; then
     echo -e "\n>>Prepare to building Terra"
 	if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then
-	echo -e "\n>>for build Terra need clang+llvm 3.5"
+	echo -e "\n>>for build Terra need clang+llvm 3.5, you need install this first"
 	cd "$DEPENDENCIES"
 	wget http://releases.llvm.org/3.5.0/LLVM-3.5.0-win32.exe -O "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
-    "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+    chmod 775 "$DEPENDENCIES"/LLVM-3.5.0-win32.exe
+	"$DEPENDENCIES"/LLVM-3.5.0-win32.exe
 	else
 	echo -e "\n>> Building Terra"
 	fi
