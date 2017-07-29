@@ -36,7 +36,7 @@ case $ENVTYPE in
 	  case $ENVPLATFOM in
 	"MINGW64*" | "MINGW32_NT-5.0" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MINGW32_NT-6.2" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
 	
-		if [ "$ENVREL" == "1.0.11(0.46/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
+		if [ "$ENVREL" == "1.0.11(0.46/3/2)" -o  "$ENVREL" == "1.0.18(0.48/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
 		echo -e "You seem to be running MSYS 1 MINGW32 Env"
 		# TODO Here
 		# Msys1 prepare
@@ -54,35 +54,44 @@ case $ENVTYPE in
 		#echo source /opt/windows_32/bin/win-builds-switch >/dev/null >> ~/.profile
 		
 		wget http://winbuilds.org/1.4.0/yypkg-1.4.0.exe -O /opt/bin/yypkg-1.4.0.exe
-		yypkg-1.4.0.exe --deploy --host msys
+		/opt/bin/yypkg-1.4.0.exe --deploy --host msys
 		echo '. /opt/windows_32/bin/win-builds-switch 32' >> ~/.profile
 		
 		fi
+		
 		export PATH="/opt/bin:$PATH"
 		export YYPREFIX=/opt/windows_32
 
 		
-		if [ ! -f /opt/bin/GetGnuWin.exe ]; then
-		wget https://sourceforge.net/projects/getgnuwin32/files/getgnuwin32/0.6.30/GetGnuWin32-0.6.3.exe -O /opt/bin/GetGnuWin.exe
-		GetGnuWin.exe 
-		fi
+		#if [ ! -f /opt/bin/GetGnuWin.exe ]; then
+		#wget https://sourceforge.net/projects/getgnuwin32/files/getgnuwin32/0.6.30/GetGnuWin32-0.6.3.exe -O /opt/bin/GetGnuWin.exe
+		#GetGnuWin.exe 
+		#fi
 		
 		# its tools to old & not work correct
-		#mingw-get update 
+		mingw-get update 
 		#mingw-get install msys-dvlpr #wget 
 		
+		echo -e "Set advansed Env var"
 		
-		USEMXE=true #build deps uses MXE
+		export DYLD_LIBRARY_FALLBACK_PATH="/opt/lib:$DYLD_LIBRARY_FALLBACK_PATH"
+		export LD_LIBRARY_PATH="/opt/lib:$LD_LIBRARY_PATH"
+		export C_INCLUDE_PATH="/opt/include:$C_INCLUDE_PATH"		
+		export ACLOCAL_PATH="/opt/share/aclocal:$ACLOCAL_PATH"
+		export PKG_CONFIG_PATH="/opt/lib/pkgconfig:$PKG_CONFIG_PATH"
+		export PATH="/opt/bin:$PATH"
+		
+		#USEMXE=true #build deps uses MXE
 		
 		BUILD_UNSHIELD=true
     	#BUILD_BOOST=true # build not work
     	#BUILD_SDL2=true    	
-        #BUILD_OSG=true
-        #BUILD_BULLET=true
+        BUILD_OSG=true
+        BUILD_BULLET=true
         BUILD_MYGUI=true
-        #BUILD_OPENAL=true
+        BUILD_OPENAL=true
     	#BUILD_FFMPEG=true
-        BUILD_TERRA=true
+        #BUILD_TERRA=true
 		
 		else
 	    echo -e "You seem to be running MSYS 2 MINGW32 Env"
@@ -471,7 +480,7 @@ fi
 
 #BUILD OPENSCENEGRAPH
 if [ $BUILD_OSG ]; then
- if [ "$ENVTYPE" == "Msys" -o "$ENVTYPE" == "Cygwin" ]; then # not work & not right (msys2 have repo) fix it!
+ if [ $BUILD_OSG_DEPS ]; then # not work & not right (msys2 have repo) fix it!
   # Win-specific prebuld steps
    echo -e "\n>> Building OpenSceneGraph 3rdparty deps"  
    git clone --recursive https://github.com/CyberSys/osg-3rdparty-cmake "$DEPENDENCIES"/osg_3rdparty
@@ -485,7 +494,7 @@ if [ $BUILD_OSG ]; then
    export MXE="$DEPENDENCIES/osg_3rdparty/build/mxe/usr"
    export PREFIX="$DEPENDENCIES/osg_3rdparty/install"
 
-CUT = "	if [ "$ENVTYPE" == "Msys" ]; then
+	if [ "$ENVTYPE" == "Msys" ]; then
 	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg_3rdparty/install \
      -DZLIB_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/zlib \
      -DMINIZIP_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/minizip \
@@ -511,7 +520,7 @@ CUT = "	if [ "$ENVTYPE" == "Msys" ]; then
      -DGLUT_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/glut \
      #-DCURL_SOURCE_DIR="$DEPENDENCIES"/osg_3rdparty/curl  
      -DCMAKE_BUILD_TYPE=Release ..
-	 fi "
+	 fi 
     make TARGET="i686-w64-mingw32.shared" minizip jasper -j$CORES
 
     if [ $? -ne 0 ]; then
