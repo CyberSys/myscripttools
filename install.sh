@@ -581,9 +581,9 @@ cd "$BASE"
 
 fi
 echo -e "\n>>This temporary deactivated for testing other func"
-CUT="
+CUT='
 #BUILD CALLFF #Windows support not implement yet
-echo -e \"\n>> Building CallFF\"
+echo -e "\n>> Building CallFF"
  mkdir "$DEPENDENCIES"/callff/build
  cd "$DEPENDENCIES"/callff/build
  if [ "$ENVTYPE" == "Msys" ]; then
@@ -599,7 +599,7 @@ echo -e \"\n>> Building CallFF\"
   fi
 
 cd "$BASE"
-"
+'
 #BUILD RAKNET
 echo -e "\n>> Building RakNet"
 cd "$DEPENDENCIES"/raknet

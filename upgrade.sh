@@ -123,6 +123,9 @@ if [ "$UPGRADE" = "YES" ]; then
   echo -e "\n>> Pulling code changes from git"
   cd "$CODE"
   git pull
+  echo -e "\n>>Try pulling code changes from git for server plugins"
+  cd "$KEEPERS"/PluginExamples
+  git pull
   cd "$BASE"
 
   echo -e "\n>> Doing a clean build of TES3MP"
@@ -132,7 +135,7 @@ if [ "$UPGRADE" = "YES" ]; then
 
   cd "$DEVELOPMENT"
   
-  export CODE_COVERAGE=1
+  export CODE_COVERAGE=0 #if is on it have some link err in msys2 
   export BUILD_SERVER=ON
   
   if [ "${CC}" = "clang" ]; then export CODE_COVERAGE=0;
@@ -168,14 +171,12 @@ case $ENVTYPE in
       -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
       -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
       -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a \
-      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a \
-      -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
-      -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
+      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a " # Terra & CALLFF temporary deactivated for testing other func
 	  
 	  if [ "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" ]; then
 	  CMAKE_PARAMS="$CMAKE_PARAMS \
-		-DLUA_INCLUDE_DIR=/mingw64/include \
-		-DLUA_LIBRARY=/mingw64/lib/liblua.dll.a \
+		-DLUA_INCLUDE_DIR=/mingw64/include/lua5.1 \
+		-DLUA_LIBRARY=/mingw64/lib/liblua5.1.dll.a \
 		-DGTEST_LIBRARY=/mingw64/lib/libgtest.dll.a \
 		-DGTEST_MAIN_LIBRARY=/mingw64/lib/libgtest_main.dll.a \
 		-DGTEST_INCLUDE_DIR=/mingw64/include \
@@ -207,10 +208,18 @@ case $ENVTYPE in
 		-DSDL2_LIBRARY=/mingw64/lib/libSDL2.dll.a \
 		-DSDL2MAIN_LIBRARY=/mingw64/lib/libSDL2main.a \
 		-DOSG_ROOT=/mingw64 " # Fixme TES3MP bug in Find*.cmake 
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libws2_32.a /mingw64/x86_64-w64-mingw32/lib/libws2_32.lib # Fixme bug in cmake filename extension *.lib instead *.a
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libmingw32.a /mingw64/x86_64-w64-mingw32/lib/libmingw32.lib
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libwinmm.a /mingw64/x86_64-w64-mingw32/lib/libwinmm.lib
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libimm32.a /mingw64/x86_64-w64-mingw32/lib/libimm32.lib
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libversion.a /mingw64/x86_64-w64-mingw32/lib/libversion.lib
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libmsimg32.a /mingw64/x86_64-w64-mingw32/lib/libmsimg32.lib
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libopengl32.a /mingw64/x86_64-w64-mingw32/lib/libopengl32.lib
+		ln -s /mingw64/x86_64-w64-mingw32/lib/libshlwapi.a /mingw64/x86_64-w64-mingw32/lib/libshlwapi.lib
 	  else
 	  CMAKE_PARAMS="$CMAKE_PARAMS \
-	  	-DLUA_INCLUDE_DIR=/mingw32/include \
-		-DLUA_LIBRARY=/mingw32/lib/liblua.dll.a \
+	  	-DLUA_INCLUDE_DIR=/mingw32/include/lua5.1 \
+		-DLUA_LIBRARY=/mingw32/lib/liblua5.1.dll.a \
 		-DGTEST_LIBRARY=/mingw32/lib/libgtest.dll.a \
 		-DGTEST_MAIN_LIBRARY=/mingw32/lib/libgtest_main.dll.a \
 		-DGTEST_INCLUDE_DIR=/mingw32/include \
@@ -243,7 +252,15 @@ case $ENVTYPE in
 		-DSDL2_LIBRARY=/mingw32/lib/libSDL2.dll.a \
 		-DSDL2MAIN_LIBRARY=/mingw32/lib/libSDL2main.a \
 		-DOSG_ROOT=/mingw32 " # Fixme TES3MP bug in Find*.cmake 
-	  fi
+		ln -s /mingw32/i686-w64-mingw32/lib/libws2_32.a /mingw32/i686-w64-mingw32/lib/libws2_32.lib # Fixme bug in cmake filename extension *.lib instead *.a
+		ln -s /mingw32/i686-w64-mingw32/lib/libmingw32.a /mingw32/i686-w64-mingw32/lib/libmingw32.lib
+		ln -s /mingw32/i686-w64-mingw32/lib/libwinmm.a /mingw32/i686-w64-mingw32/lib/libwinmm.lib
+		ln -s /mingw32/i686-w64-mingw32/lib/libimm32.a /mingw32/i686-w64-mingw32/lib/libimm32.lib
+		ln -s /mingw32/i686-w64-mingw32/lib/libversion.a /mingw32/i686-w64-mingw32/lib/libversion.lib
+		ln -s /mingw32/i686-w64-mingw32/lib/libmsimg32.a /mingw32/i686-w64-mingw32/lib/libmsimg32.lib
+		ln -s /mingw32/i686-w64-mingw32/lib/libopengl32.a /mingw32/i686-w64-mingw32/lib/libopengl32.lib
+		ln -s /mingw32/i686-w64-mingw32/lib/libshlwapi.a /mingw32/i686-w64-mingw32/lib/libshlwapi.lib
+		fi
 
         if [ $BUILD_BOOST ]; then
          CMAKE_PARAMS="$CMAKE_PARAMS \
@@ -307,7 +324,7 @@ case $ENVTYPE in
       -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSG_LIBRARY="${OSG_LOCATION}"/install/lib/libosg.dll.a \
       -DOSGANIMATION_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/install/build/lib/libosgAnimation.dll.a \
+      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/install/lib/libosgAnimation.dll.a \
       -DOSGDB_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGDB_LIBRARY="${OSG_LOCATION}"/install/lib/libosgDB.dll.a \
       -DOSGFX_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
