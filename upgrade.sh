@@ -118,6 +118,9 @@ if [ "$UPGRADE" = "YES" ]; then
   echo -e "\n>> Pulling code changes from git"
   cd "$CODE"
   git pull
+  echo -e "\n>>Try pulling code changes from git for server plugins"
+  cd "$KEEPERS"/PluginExamples
+  git pull
   cd "$BASE"
 
   echo -e "\n>> Doing a clean build of TES3MP"
@@ -231,7 +234,7 @@ case $ENVTYPE in
       -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSG_LIBRARY="${OSG_LOCATION}"/install/lib/libosg.dll.a \
       -DOSGANIMATION_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/install/build/lib/libosgAnimation.dll.a \
+      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/install/lib/libosgAnimation.dll.a \
       -DOSGDB_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
       -DOSGDB_LIBRARY="${OSG_LOCATION}"/install/lib/libosgDB.dll.a \
       -DOSGFX_INCLUDE_DIR="${OSG_LOCATION}"/install/include \

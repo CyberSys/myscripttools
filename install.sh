@@ -54,12 +54,12 @@ case $ENVTYPE in
 		#echo source /opt/windows_32/bin/win-builds-switch >/dev/null >> ~/.profile
 		
 		wget http://winbuilds.org/1.4.0/yypkg-1.4.0.exe -O /opt/bin/yypkg-1.4.0.exe
-		/opt/bin/yypkg-1.4.0.exe --deploy --host msys
+		#/opt/bin/yypkg-1.4.0.exe --deploy --host msys
 		echo '. /opt/windows_32/bin/win-builds-switch 32' >> ~/.profile
 		
 		fi
 		
-		export PATH="/opt/bin:$PATH"
+		export PATH="/opt/windows_32/bin:$PATH"
 		export YYPREFIX=/opt/windows_32
 
 		
@@ -72,7 +72,7 @@ case $ENVTYPE in
 		mingw-get update 
 		#mingw-get install msys-dvlpr #wget 
 		
-		echo -e "Set advansed Env var"
+	    echo -e "Set advansed Env var"
 		
 		export DYLD_LIBRARY_FALLBACK_PATH="/opt/lib:$DYLD_LIBRARY_FALLBACK_PATH"
 		export LD_LIBRARY_PATH="/opt/lib:$LD_LIBRARY_PATH"
@@ -80,6 +80,27 @@ case $ENVTYPE in
 		export ACLOCAL_PATH="/opt/share/aclocal:$ACLOCAL_PATH"
 		export PKG_CONFIG_PATH="/opt/lib/pkgconfig:$PKG_CONFIG_PATH"
 		export PATH="/opt/bin:$PATH"
+		
+		if [ ! -f /opt/7za920.zip ]; then
+		wget http://www.7-zip.org/a/7za920.zip -O /opt/7za920.zip
+		unzip /opt/7za920.zip -d/opt/bin
+		fi
+		if [ ! -f /opt/cmake-3.9.0-rc5-win32-x86.zip ]; then
+		wget --no-check-certificate https://cmake.org/files/v3.9/cmake-3.9.0-rc5-win32-x86.zip -O /opt/cmake-3.9.0-rc5-win32-x86.zip
+		unzip /opt/cmake-3.9.0-rc5-win32-x86.zip -d/opt
+		echo 'export PATH="/opt/cmake-3.9.0-rc5-win32-x86/bin:$PATH"' >> ~/.profile
+		fi
+		if [ ! -f /opt/Qt-5.0.1-x32.7z ]; then
+		wget --no-check-certificate https://sourceforge.net/projects/mingwbuilds/files/external-binary-packages/Qt-Builds/Qt-5.0.1-x32.7z/download -O /opt/Qt-5.0.1-x32.7z
+		7za -y x /opt/Qt-5.0.1-x32.7z -o/opt
+		fi
+
+	    export DYLD_LIBRARY_FALLBACK_PATH="/opt/Qt32-5.0.1/lib:$DYLD_LIBRARY_FALLBACK_PATH"
+		export LD_LIBRARY_PATH="/opt/Qt32-5.0.1/lib:$LD_LIBRARY_PATH"
+		export C_INCLUDE_PATH="/opt/Qt32-5.0.1/include:$C_INCLUDE_PATH"		
+		export ACLOCAL_PATH="/opt/Qt32-5.0.1/share/aclocal:$ACLOCAL_PATH"
+		export PKG_CONFIG_PATH="/opt/Qt32-5.0.1/lib/pkgconfig:$PKG_CONFIG_PATH"
+		export PATH="/opt/Qt32-5.0.1/bin:$PATH"
 		
 		#USEMXE=true #build deps uses MXE
 		
@@ -605,7 +626,7 @@ cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
 if [ "$ENVTYPE" == "Msys" ]; then
 cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
--DFREETYPE_INCLUDE_DIR=/usr/include/freetype2/ \
+-DMYGUI_RENDERSYSTEM=4 \
 -DMYGUI_BUILD_DEMOS:BOOL=OFF \
 -DMYGUI_BUILD_DOCS:BOOL=OFF \
 -DMYGUI_BUILD_TEST_APP:BOOL=OFF \
