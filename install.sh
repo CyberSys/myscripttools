@@ -48,13 +48,13 @@ case $ENVTYPE in
 		#YYPkg is a small, fast, platform-agnostic package manager. It can be used to manage any directory.
 		#It is built to help cross-compilation setups and it works both for and on Windows.
 		
-		if [ ! -f /opt/yypkg-1.4.0.exe ]; then
+		if [ ! -f /opt/bin/yypkg-1.4.0.exe ]; then
 		#wget http://win-builds.org/1.5.0/win-builds-1.5.0.exe -O /opt/bin/win-builds-1.5.0.exe
 		#win-builds-1.5.0.exe --deploy --host msys
 		#echo source /opt/windows_32/bin/win-builds-switch >/dev/null >> ~/.profile
 		
 		wget http://winbuilds.org/1.4.0/yypkg-1.4.0.exe -O /opt/bin/yypkg-1.4.0.exe
-		#/opt/bin/yypkg-1.4.0.exe --deploy --host msys
+		/opt/bin/yypkg-1.4.0.exe --deploy --host msys
 		echo '. /opt/windows_32/bin/win-builds-switch 32' >> ~/.profile
 		
 		fi
