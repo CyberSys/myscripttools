@@ -1,5 +1,10 @@
 #!/bin/bash 
 
+if [ "$(whoami)" == 'root' ]; then 
+  echo "Ахтунг: под учетной записью рута работать отказываюсь!" 
+  exit 1 
+fi
+
 #NUMBER OF CPU CORES USED FOR COMPILATION
 if [ "$1" == "" ]; then
     CORES="$(cat /proc/cpuinfo | awk '/^processor/{print $3}' | wc -l)"
@@ -21,6 +26,10 @@ DEPENDENCIES="$BASE/dependencies"
 
 if [ -d "$DEPENDENCIES"/boost ]; then
   BUILD_BOOST=true
+fi
+
+if [ -d "$DEPENDENCIES"/SDL2 ]; then
+  BUILD_SDL2=true
 fi
 
 if [ -d "$DEPENDENCIES"/osg ]; then
@@ -48,12 +57,66 @@ CALLFF_LOCATION="$DEPENDENCIES"/callff
 RAKNET_LOCATION="$DEPENDENCIES"/raknet
 TERRA_LOCATION="$DEPENDENCIES"/terra
 #Set for other deps if needed 
-if [ $BUILD_BOOST ]; then BOOST_LOCATION="$DEPENDENCIES"/boost; fi
-if [ $BUILD_OSG ]; then OSG_LOCATION="$DEPENDENCIES"/osg; fi
-if [ $BUILD_BULLET ]; then BULLET_LOCATION="$DEPENDENCIES"/bullet; fi
-if [ $BUILD_MYGUI ]; then MYGUI_LOCATION="$DEPENDENCIES"/mygui; fi
-if [ $BUILD_OPENAL ]; then OPENAL_LOCATION="$DEPENDENCIES"/openal; fi
-if [ $BUILD_FFMPEG ]; then FFMPEG_LOCATION="$DEPENDENCIES"/ffmpeg; fi
+if [ $BUILD_BOOST ]; then BOOST_LOCATION="$DEPENDENCIES"/boost
+	export BOOST_ROOT="${BOOST_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BOOST_LOCATION}"/install/lib 
+fi
+if [ $BUILD_SDL2 ]; then SDL2_LOCATION="$DEPENDENCIES"/SDL2
+	export SDL2DIR="${SDL2_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${SDL2_LOCATION}"/install/lib 
+fi
+if [ $BUILD_OSG ]; then OSG_LOCATION="$DEPENDENCIES"/osg
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OSG_LOCATION}"/install/lib
+	export OSG_ROOT="${OSG_LOCATION}"/install 
+fi
+if [ $BUILD_BULLET ]; then BULLET_LOCATION="$DEPENDENCIES"/bullet
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BULLET_LOCATION}"/install/lib
+	export BULLET_ROOT="${BULLET_LOCATION}"/install
+fi
+
+if [ $BUILD_MYGUI ]; then MYGUI_LOCATION="$DEPENDENCIES"/mygui
+	export MYGUI_HOME="${MYGUI_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
+fi
+if [ $BUILD_OPENAL ]; then OPENAL_LOCATION="$DEPENDENCIES"/openal
+	export OPENALDIR="${OPENAL_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
+fi
+if [ $BUILD_FFMPEG ]; then FFMPEG_LOCATION="$DEPENDENCIES"/ffmpeg
+	export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
+fi
+
+#Set for other deps if needed 
+if [ $BUILD_BOOST ]; then BOOST_LOCATION="$DEPENDENCIES"/boost
+	export BOOST_ROOT="${BOOST_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BOOST_LOCATION}"/install/lib 
+fi
+if [ $BUILD_SDL2 ]; then SDL2_LOCATION="$DEPENDENCIES"/SDL2
+	export SDL2DIR="${SDL2_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${SDL2_LOCATION}"/install/lib 
+fi
+if [ $BUILD_OSG ]; then OSG_LOCATION="$DEPENDENCIES"/osg
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OSG_LOCATION}"/install/lib
+	export OSG_ROOT="${OSG_LOCATION}"/install 
+fi
+if [ $BUILD_BULLET ]; then BULLET_LOCATION="$DEPENDENCIES"/bullet
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BULLET_LOCATION}"/install/lib
+	export BULLET_ROOT="${BULLET_LOCATION}"/install
+fi
+
+if [ $BUILD_MYGUI ]; then MYGUI_LOCATION="$DEPENDENCIES"/mygui
+	export MYGUI_HOME="${MYGUI_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
+fi
+if [ $BUILD_OPENAL ]; then OPENAL_LOCATION="$DEPENDENCIES"/openal
+	export OPENALDIR="${OPENAL_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
+fi
+if [ $BUILD_FFMPEG ]; then FFMPEG_LOCATION="$DEPENDENCIES"/ffmpeg
+	export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
+fi
 
 #CHECK IF THERE ARE CHANGES IN THE GIT REMOTE
 echo -e "\n>> Checking the git repository for changes"
@@ -91,6 +154,9 @@ if [ "$UPGRADE" = "YES" ]; then
   echo -e "\n>> Pulling code changes from git"
   cd "$CODE"
   git pull
+  echo -e "\n>>Try pulling code changes from git for server plugins"
+  cd "$KEEPERS"/PluginExamples
+  git pull
   cd "$BASE"
 
   echo -e "\n>> Doing a clean build of TES3MP"
@@ -125,7 +191,7 @@ case $ENVTYPE in
     echo -e "Bulding on Haiku"
 
 
-  CMAKE_PARAMS="-DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}"  -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=TRUE \
+  CMAKE_PARAMS="-DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_WITH_LUA=ON -DFORCE_LUA=ON -DBUILD_WITH_PAWN=OFF -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}"  -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=TRUE \
       -DCMAKE_CXX_STANDARD=14 \
       -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
       -DCallFF_INCLUDES="${CALLFF_LOCATION}"/include \
@@ -136,57 +202,84 @@ case $ENVTYPE in
       -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
       -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
 
-   if [ $BUILD_BOOST ]; then
-    CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DBOOST_INCLUDE_DIR="${BOOST_LOCATION}"/include "
-      export BOOST_ROOT="${BOOST_LOCATION}"/install
-      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BOOST_LOCATION}"/install/lib
-   fi
+        if [ $BUILD_BOOST ]; then
+         CMAKE_PARAMS="$CMAKE_PARAMS \
+        -DBoost_DIR="${BOOST_LOCATION}"/install \
+		-DBoost_INCLUDE_DIR="${BOOST_LOCATION}"/install/include \
+		-DBoost_LIBRARY_DIR="${BOOST_LOCATION}"/install/lib \
+		-DBoost_SYSTEM_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_system-mt.so \
+		-DBoost_PROGRAM_OPTIONS_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_program_options-mt.so \
+		-DBoost_FILESYSTEM_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_filesystem-mt.so \
+		-DBoost_LOCALE_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_locale-mt.so  "
+         export BOOST_ROOT="${BOOST_LOCATION}"/install
+         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BOOST_LOCATION}"/install/lib
+        fi
    
    if [ $BUILD_OPENAL ]; then
-    CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include/AL "
-      export OPENALDIR="${OPENAL_LOCATION}"/install
-      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
-   fi
+         CMAKE_PARAMS="$CMAKE_PARAMS \
+        -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include/AL \
+		-DOPENAL_LIBRARY="${OPENAL_LOCATION}"/install/lib/libopenal.so "
+         export OPENALDIR="${OPENAL_LOCATION}"/install
+         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
+        fi
    
-   if [ $BUILD_FFMPEG ]; then
-    CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DFFMPEG_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include "
-      export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
-      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
-   fi
+        if [ $BUILD_FFMPEG ]; then
+         CMAKE_PARAMS="$CMAKE_PARAMS \
+        -DFFmpeg_AVCODEC_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+		-DFFmpeg_AVCODEC_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libavcodec.so \
+		-DFFmpeg_AVFORMAT_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+		-DFFmpeg_AVFORMAT_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libavformat.so \
+		-DFFmpeg_AVUTIL_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+		-DFFmpeg_AVUTIL_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libavutil.so \
+		-DFFmpeg_SWSCALE_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+		-DFFmpeg_SWSCALE_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libswscale.so \
+		-DFFmpeg_SWRESAMPLE_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+		-DFFmpeg_SWRESAMPLE_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libswresample.so "
+         export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
+         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
+        fi
    
-   if [ $BUILD_MYGUI ]; then
-    CMAKE_PARAMS="$CMAKE_PARAMS \
-      -DMYGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/install/include "
-      export MYGUI_HOME="${MYGUI_LOCATION}"/install
-      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
-   fi
- 
-  if [ $BUILD_OSG ]; then
-    CMAKE_PARAMS="$CMAKE_PARAMS \
+        if [ $BUILD_SDL2 ]; then
+         CMAKE_PARAMS="$CMAKE_PARAMS \
+        -DSDL2_INCLUDE_DIR="${SDL2_LOCATION}"/install/include/SDL2 \
+		-DSDL2_TARGET_SPECIFIC=native \
+		-DSDL2_LIBRARY="${SDL2_LOCATION}"/install/lib/libSDL2.so \
+		-DSDL2MAIN_LIBRARY="${SDL2_LOCATION}"/install/lib/libSDL2main.a "
+         export SDL2DIR="${SDL2_LOCATION}"/install
+         export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${SDL2_LOCATION}"/install/lib
+        fi
+   
+        if [ $BUILD_MYGUI ]; then
+          CMAKE_PARAMS="$CMAKE_PARAMS \
+         -DMyGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/install/include/MYGUI  \
+		 -DMyGUI_LIBRARY="${MYGUI_LOCATION}"/install/lib/RelWithDebInfo/libMyGUIEngine.so "
+          export MYGUI_HOME="${MYGUI_LOCATION}"/install
+          export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
+        fi
+		
+		if [ $BUILD_OSG ]; then
+       CMAKE_PARAMS="$CMAKE_PARAMS \
       -DOPENTHREADS_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOPENTHREADS_LIBRARY="${OSG_LOCATION}"/build/lib/libOpenThreads.so \
+      -DOPENTHREADS_LIBRARY="${OSG_LOCATION}"/install/lib/libOpenThreads.so \
       -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSG_LIBRARY="${OSG_LOCATION}"/build/lib/libosg.so \
+      -DOSG_LIBRARY="${OSG_LOCATION}"/install/lib/libosg.so \
       -DOSGANIMATION_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/build/lib/libosgAnimation.so \
+      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/install/lib/libosgAnimation.so \
       -DOSGDB_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGDB_LIBRARY="${OSG_LOCATION}"/build/lib/libosgDB.so \
+      -DOSGDB_LIBRARY="${OSG_LOCATION}"/install/lib/libosgDB.so \
       -DOSGFX_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGFX_LIBRARY="${OSG_LOCATION}"/build/lib/libosgFX.so \
+      -DOSGFX_LIBRARY="${OSG_LOCATION}"/install/lib/libosgFX.so \
       -DOSGGA_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGGA_LIBRARY="${OSG_LOCATION}"/build/lib/libosgGA.so \
+      -DOSGGA_LIBRARY="${OSG_LOCATION}"/install/lib/libosgGA.so \
       -DOSGPARTICLE_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGPARTICLE_LIBRARY="${OSG_LOCATION}"/build/lib/libosgParticle.so \
+      -DOSGPARTICLE_LIBRARY="${OSG_LOCATION}"/install/lib/libosgParticle.so \
       -DOSGTEXT_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGTEXT_LIBRARY="${OSG_LOCATION}"/build/lib/libosgText.so \
+      -DOSGTEXT_LIBRARY="${OSG_LOCATION}"/install/lib/libosgText.so \
       -DOSGUTIL_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGUTIL_LIBRARY="${OSG_LOCATION}"/build/lib/libosgUtil.so \
+      -DOSGUTIL_LIBRARY="${OSG_LOCATION}"/install/lib/libosgUtil.so \
       -DOSGVIEWER_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
-      -DOSGVIEWER_LIBRARY="${OSG_LOCATION}"/build/lib/libosgViewer.so"
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OSG_LOCATION}"/install/lib
+      -DOSGVIEWER_LIBRARY="${OSG_LOCATION}"/install/lib/libosgViewer.so"
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OSG_LOCATION}"/install/lib
     export OSG_ROOT="${OSG_LOCATION}"/install
   fi
   
@@ -380,6 +473,8 @@ case $ENVTYPE in
 esac
 
   echo -e "\n\n$CMAKE_PARAMS\n\n"
+  cd "$DEVELOPMENT"
+  rm CMakeCache.txt
   cmake "$CODE" $CMAKE_PARAMS
   make -j $CORES 2>&1 | tee "${BASE}"/build.log
 
