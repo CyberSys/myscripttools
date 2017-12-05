@@ -51,6 +51,9 @@ fi
 if [ -d "$DEPENDENCIES"/ffmpeg ]; then
   BUILD_FFMPEG=true
 fi
+if [ -d "$DEPENDENCIES"/mumble ]; then
+  BUILD_MUMBLE=true
+fi
 
 #DEPENDENCY LOCATIONS
 CALLFF_LOCATION="$DEPENDENCIES"/callff
@@ -85,6 +88,10 @@ fi
 if [ $BUILD_FFMPEG ]; then FFMPEG_LOCATION="$DEPENDENCIES"/ffmpeg
 	export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
 	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
+fi
+if [ $BUILD_MUMBLE ]; then MUMBLE_LOCATION="$DEPENDENCIES"/mumble
+	export PATH="${MUMBLE_LOCATION}"/install/bin:"$PATH"
+	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MUMBLE_LOCATION}"/install/lib
 fi
 
 #CHECK IF THERE ARE CHANGES IN THE GIT REMOTE
@@ -122,6 +129,9 @@ if [ "$UPGRADE" = "YES" ]; then
   #PULL CODE CHANGES FROM THE GIT REPOSITORY
   echo -e "\n>> Pulling code changes from git"
   cd "$CODE"
+  git pull
+  echo -e "\n>>Try pulling code changes from git for server plugins"
+  cd "$KEEPERS"/PluginExamples
   git pull
   cd "$BASE"
 

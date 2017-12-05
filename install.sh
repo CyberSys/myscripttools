@@ -180,7 +180,7 @@ echo -e "\n>> Checking which GNU/Linux distro is installed"
             echo -e "Done!"
       fi
       sudo apt-get update
-      sudo apt-get install cmake git libopenal-dev qt5-default libopenscenegraph-3.4-dev libsdl2-dev libqt4-dev libboost-filesystem-dev libboost-thread-dev libboost-program-options-dev libboost-system-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libmygui-dev libunshield-dev cmake build-essential libqt4-opengl-dev g++ gcc-multilib g++-multilib libncurses5-dev #clang llvm libclang-dev llvm-dev #llvm-3.5 clang-3.5 libclang-3.5-dev llvm-3.5-dev #libbullet-dev
+      sudo apt-get install cmake git libopenal-dev qt5-default libqt5opengl5-dev libopenscenegraph-3.4-dev libsdl2-dev libboost-filesystem-dev libboost-thread-dev libboost-program-options-dev libboost-system-dev libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev libmygui-dev libunshield-dev cmake build-essential g++ gcc-multilib g++-multilib libncurses5-dev mumble mumble-server # libqt4-dev libqt4-opengl-dev clang llvm libclang-dev llvm-dev #llvm-3.5 clang-3.5 libclang-3.5-dev llvm-3.5-dev #libbullet-dev
      
       sudo apt-get build-dep bullet
         BUILD_BULLET=true # good
@@ -191,6 +191,7 @@ echo -e "\n>> Checking which GNU/Linux distro is installed"
         BUILD_OSG=true  # good      
         BUILD_MYGUI=true # good
         #BUILD_OPENAL=true # good
+        #BUILD_MUMBLE=true
     	#BUILD_FFMPEG=true #Fix me building with cmake not work & have some final link errs with OpenMW/TES3MP
         #BUILD_TERRA=true #Fix me building not work, Terra currently doesn't support any 32bit ABIs (stdcall, cdecl, etc.). LLVM/clang libraries that support gcc 5.1.* but not yet. src/tdebug.cpp:152:45: error: use of undeclared identifier 'REG_RIP'; did you mean 'REG_EIP'?
   ;;
@@ -236,7 +237,14 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
     
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
-git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
+
+git clone --recursive https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
+
+#tes3mp with mumble support
+#git clone --recursive https://github.com/perfectcolors/openmw-tes3mp.git "$CODE"
+
+if [ $BUILD_MUMBLE ]; then git clone --recursive https://github.com/mumble-voip/mumble.git "$DEPENDENCIES"/mumble ; fi
+
 git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
 git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet 
 
@@ -264,7 +272,7 @@ echo -e "WARNING! Could not determine your Env Type, press ENTER to continue" ; 
 fi
 
 echo -e "\n>> Clone server-side plugins scripts"
-git clone https://github.com/TES3MP/PluginExamples.git "$KEEPERS"/PluginExamples
+git clone https://github.com/TES3MP/CoreScripts.git "$KEEPERS"/PluginExamples
 
 #COPY STATIC SERVER AND CLIENT CONFIGS
 echo -e "\n>> Copying server and client configs to their permanent place"
@@ -605,7 +613,16 @@ fi
 
 cd "$BASE"
 
+#BUILD Mumble
+if [ $BUILD_MUMBLE ]; then
+echo -e "\n>> Building  Mumble"
+
+cd "$BASE"
+
+fi
+
 #CALL upgrade.sh TO BUILD TES3MP
 echo -e "\n>>Preparing to build TES3MP"
 bash ./upgrade.sh "$CORES" --install
+echo -e "\n>>Press any key to exit"
 read
