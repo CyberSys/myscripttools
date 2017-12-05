@@ -234,6 +234,16 @@ DEPENDENCIES="$BASE/dependencies"
 echo -e ">> Creating folder hierarchy"
 mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 
+
+#CHECK IF GCC HAS C++14 SUPPORT, DISPLAY A MESSAGE AND ABORT OTHERWISE
+echo -e "\n>> Checking if the compiler has the necessary features"
+ GCCVERSION=$(gcc -dumpversion)
+ GCCVERSION_F=$(echo $GCCVERSION | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+ GCCVERSION_P=$((${GCCVERSION_F}*(10**(5-${#GCCVERSION_F}))))
+  if [ $GCCVERSION_P -lt 60100 ]; then
+     echo -e "\nTES3MP requires some fairly recent C++ features.\nCurrent GCC version is $GCCVERSION.\nUpdate GCC to at least version 6.1 to proceed.\n\nOnly upgrade your toolchain if you know what you are doing.\nProceed at your own risk."
+     exit 1
+  fi
     
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
