@@ -37,7 +37,7 @@ case $ENVTYPE in
     #Check Windows Env And Install Deps
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
+	"MINGW64*" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MINGW32_NT-6.1" | "MSYS_NT-6.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
 	
 		if [ "$ENVREL" == "1.0.11(0.46/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
 		echo -e "You seem to be running MSYS 1 MINGW32 Env"
@@ -50,15 +50,15 @@ case $ENVTYPE in
 		# Msys2 prepare
 		#Install MSYS2 MINGW32 / MINGW64
 		
-		#echo -e "Update the package list. You might have to restart your shell again."
-		# pacman -Syuu   # update the package list, broken on nt-5.1
+		echo -e "Update the package list. You might have to restart your shell again."
+		 pacman -Syuu   # update the package list, Warn broken on nt-5.1 !!!
 		
 	    #If you installed 64-bit MSYS2, then do
 		if [ "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" ]; then
 		echo -e "You seem to be running MSYS 2 MINGW64 Env"
 		 pacman -Sy base-devel mingw-w64-x86_64-toolchain
 		 
-		 pacman -Sy git wget unzip mingw-w64-x86_64-gtest mingw-w64-x86_64-lua51 mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openal mingw-w64-x86_64-OpenSceneGraph mingw-w64-x86_64-bullet mingw-w64-x86_64-qt5 mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-SDL2 mingw-w64-x86_64-ncurses mingw-w64-x86_64-yasm mingw-w64-x86_64-clang mingw-w64-x86_64-llvm #unshield #mygui  #clang35 llvm35 #libxkbcommon-x11		
+		 pacman -Sy git wget unzip mingw-w64-x86_64-doxygen mingw-w64-x86_64-gtest mingw-x86_64-luajit-git mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openal mingw-w64-x86_64-OpenSceneGraph mingw-w64-x86_64-bullet mingw-w64-x86_64-qt5 mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-SDL2 mingw-w64-x86_64-ncurses mingw-w64-x86_64-yasm mingw-w64-x86_64-clang mingw-w64-x86_64-llvm #unshield #mygui  #clang35 llvm35 mingw-w64-x86_64-lua51 #libxkbcommon-x11		
 		 
 		 export SDL2DIR=/mingw64 # Fixme TES3MP bug in FindSDL2.cmake
 		 export SDL2_LIBRARY=/mingw64/lib/libSDL2.dll.a
@@ -69,7 +69,7 @@ case $ENVTYPE in
 		echo -e "You seem to be running MSYS 2 MINGW32 Env"				
 		 pacman -Sy base-devel mingw-w64-i686-toolchain   
 		
-		 pacman -Sy git wget unzip mingw-w64-i686-gtest mingw-w64-i686-lua51 mingw-w64-i686-cmake mingw-w64-i686-boost mingw-w64-i686-openal mingw-w64-i686-OpenSceneGraph mingw-w64-i686-bullet mingw-w64-i686-qt5 mingw-w64-i686-ffmpeg mingw-w64-i686-SDL2 mingw-w64-i686-ncurses mingw-w64-i686-yasm mingw-w64-i686-clang mingw-w64-i686-llvm #unshield #mygui  #clang35 llvm35 #libxkbcommon-x11
+		 pacman -Sy git wget unzip mingw-w64-i686-doxygen mingw-w64-i686-gtest mingw-w64-i686-luajit-git mingw-w64-i686-cmake mingw-w64-i686-boost mingw-w64-i686-openal mingw-w64-i686-OpenSceneGraph mingw-w64-i686-bullet mingw-w64-i686-qt5 mingw-w64-i686-ffmpeg mingw-w64-i686-SDL2 mingw-w64-i686-ncurses mingw-w64-i686-yasm mingw-w64-i686-clang mingw-w64-i686-llvm #unshield #mygui  #clang35 llvm35 mingw-w64-i686-lua51 #libxkbcommon-x11
 		
 	    #echo -e "\nIf you wish to build OpenSceneGraph from source\nhttps://wiki.openmw.org/index.php?title=Development_Environment_Setup#Build_and_install_OSG\n\nType YES if you want the script to do it automatically (THIS IS BROKEN ATM)\nIf you already have it installed or want to do it manually,\npress ENTER to continue"
         #read INPUT
@@ -253,7 +253,16 @@ DEPENDENCIES="$BASE/dependencies"
 echo -e ">> Creating folder hierarchy"
 mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 
-    
+#CHECK IF GCC HAS C++14 SUPPORT, DISPLAY A MESSAGE AND ABORT OTHERWISE
+echo -e "\n>> Checking if the compiler has the necessary features"
+ GCCVERSION=$(gcc -dumpversion)
+ GCCVERSION_F=$(echo $GCCVERSION | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+ GCCVERSION_P=$((${GCCVERSION_F}*(10**(5-${#GCCVERSION_F}))))
+  if [ $GCCVERSION_P -lt 60100 ]; then
+     echo -e "\nTES3MP requires some fairly recent C++ features.\nCurrent GCC version is $GCCVERSION.\nUpdate GCC to at least version 6.1 to proceed.\n\nOnly upgrade your toolchain if you know what you are doing.\nProceed at your own risk."
+     exit 1
+  fi
+        
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
@@ -280,7 +289,7 @@ echo -e "WARNING! Could not determine your Env Type, press ENTER to continue" ; 
 fi
 
 echo -e "\n>> Clone server-side plugins scripts"
-git clone https://github.com/TES3MP/PluginExamples.git "$KEEPERS"/PluginExamples
+git clone https://github.com/TES3MP/CoreScripts.git "$KEEPERS"/PluginExamples
 
 #COPY STATIC SERVER AND CLIENT CONFIGS
 echo -e "\n>> Copying server and client configs to their permanent place"
@@ -580,9 +589,11 @@ make install
 cd "$BASE"
 
 fi
-echo -e "\n>>This temporary deactivated for testing other func"
-CUT='
-#BUILD CALLFF #Windows support not implement yet
+#echo -e "\n>>This temporary deactivated for testing other func"
+
+#BUILD CALLFF #Windows support only x86 yet, if you have off_t err try 
+#add #include <sys/types.h> in call.cpp
+
 echo -e "\n>> Building CallFF"
  mkdir "$DEPENDENCIES"/callff/build
  cd "$DEPENDENCIES"/callff/build
@@ -599,7 +610,7 @@ echo -e "\n>> Building CallFF"
   fi
 
 cd "$BASE"
-'
+
 #BUILD RAKNET
 echo -e "\n>> Building RakNet"
 cd "$DEPENDENCIES"/raknet
@@ -655,4 +666,5 @@ cd "$BASE"
 #CALL upgrade.sh TO BUILD TES3MP
 echo -e "\n>>Preparing to build TES3MP"
 bash ./upgrade.sh "$CORES" --install
+echo -e "\n>>Press any key to exit"
 read

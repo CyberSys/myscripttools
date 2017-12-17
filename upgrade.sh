@@ -150,6 +150,16 @@ if [ "$UPGRADE" = "YES" ]; then
     export BUILD_SERVER=ON
   fi
 
+#CHECK IF GCC HAS C++14 SUPPORT, DISPLAY A MESSAGE AND ABORT OTHERWISE
+echo -e "\n>> Checking if the compiler has the necessary features"
+ GCCVERSION=$(gcc -dumpversion)
+ GCCVERSION_F=$(echo $GCCVERSION | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+ GCCVERSION_P=$((${GCCVERSION_F}*(10**(5-${#GCCVERSION_F}))))
+  if [ $GCCVERSION_P -lt 60100 ]; then
+     echo -e "\nTES3MP requires some fairly recent C++ features.\nCurrent GCC version is $GCCVERSION.\nUpdate GCC to at least version 6.1 to proceed.\n\nOnly upgrade your toolchain if you know what you are doing.\nProceed at your own risk."
+     exit 1
+  fi
+ 
 case $ENVTYPE in
    "MacOS" )
  	   echo -e "You seem to be running MacOS X Env"
@@ -163,20 +173,22 @@ case $ENVTYPE in
     #Check Windows Env And setup build parms
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" )
+	"MINGW64*" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MINGW32_NT-6.1" | "MSYS_NT-6.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" )
 	   echo -e "Building on MINGW32 or MINGW64 Env"
 	    # TODO Here	    
-	CMAKE_PARAMS="-DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_WITH_LUA=ON -DFORCE_LUA=ON -DBUILD_WITH_PAWN=OFF -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}" -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=FALSE \
+	CMAKE_PARAMS=" -DDESIRED_QT_VERSION=5 -DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_WITH_LUA=ON -DFORCE_LUA=ON -DBUILD_WITH_PAWN=OFF -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}" -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=FALSE \
       -DCMAKE_CXX_STANDARD=14 \
       -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
+	  -DCallFF_INCLUDES="${CALLFF_LOCATION}"/include \
+      -DCallFF_LIBRARY="${CALLFF_LOCATION}"/build/src/libcallff.a \
       -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
       -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a \
-      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a " # Terra & CALLFF temporary deactivated for testing other func
+      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a " # Terra temporary deactivated for testing other func
 	  
 	  if [ "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" ]; then
 	  CMAKE_PARAMS="$CMAKE_PARAMS \
-		-DLUA_INCLUDE_DIR=/mingw64/include/lua5.1 \
-		-DLUA_LIBRARY=/mingw64/lib/liblua5.1.dll.a \
+		-DLuaJIT_INCLUDE_DIR=/mingw64/include/luajit-2.0 \
+		-DLuaJIT_LIBRARY=/mingw64/lib/libluajit-5.1.dll.a \
 		-DGTEST_LIBRARY=/mingw64/lib/libgtest.dll.a \
 		-DGTEST_MAIN_LIBRARY=/mingw64/lib/libgtest_main.dll.a \
 		-DGTEST_INCLUDE_DIR=/mingw64/include \
@@ -218,8 +230,8 @@ case $ENVTYPE in
 		ln -s /mingw64/x86_64-w64-mingw32/lib/libshlwapi.a /mingw64/x86_64-w64-mingw32/lib/libshlwapi.lib
 	  else
 	  CMAKE_PARAMS="$CMAKE_PARAMS \
-	  	-DLUA_INCLUDE_DIR=/mingw32/include/lua5.1 \
-		-DLUA_LIBRARY=/mingw32/lib/liblua5.1.dll.a \
+	  	-DLuaJIT_INCLUDE_DIR=/mingw32/include/luajit-2.0 \
+		-DLuaJIT_LIBRARY=/mingw32/lib/libluajit-5.1.dll.a \
 		-DGTEST_LIBRARY=/mingw32/lib/libgtest.dll.a \
 		-DGTEST_MAIN_LIBRARY=/mingw32/lib/libgtest_main.dll.a \
 		-DGTEST_INCLUDE_DIR=/mingw32/include \
