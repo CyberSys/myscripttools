@@ -170,9 +170,9 @@ echo -e "\n>> Checking which GNU/Linux distro is installed"
         #BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
   ;;
 
-  "ubuntu" | "linuxmint" )
-      echo -e "You seem to be running either Ubuntu or Mint"
-      echo -e "\nUbuntu and Mint users are required to enable the OpenMW PPA repository\nhttps://wiki.openmw.org/index.php?title=Development_Environment_Setup#Ubuntu\n\nType YES if you want the script to do it automatically\nIf you already have it enabled or want to do it manually,\npress ENTER to continue"
+  "ubuntu" | "linuxmint" | "elementary" )
+      echo -e "You seem to be running Ubuntu, Mint or elementary OS"
+      echo -e "\nUbuntu and Mint or etc distro users are required to enable the OpenMW PPA repository\nhttps://wiki.openmw.org/index.php?title=Development_Environment_Setup#Ubuntu\n\nType YES if you want the script to do it automatically\nIf you already have it enabled or want to do it manually,\npress ENTER to continue"
       read INPUT
       if [ "$INPUT" == "YES" ]; then
             echo -e "\nEnabling the OpenMW PPA repository..."
@@ -186,7 +186,7 @@ echo -e "\n>> Checking which GNU/Linux distro is installed"
         BUILD_BULLET=true # good
         #BUILD_UNSHIELD=true # good
     	#BUILD_BOOST=true #Fix me building not work
-    	#BUILD_SDL2=true # Not implement yet
+    	BUILD_SDL2=true # TestMe!
       sudo apt-get build-dep openscenegraph   	
         BUILD_OSG=true  # good      
         BUILD_MYGUI=true # good
@@ -226,13 +226,16 @@ esac
 #FOLDER HIERARCHY
 BASE="$(pwd)"
 CODE="$BASE/code"
+SCRIPT_BASE="$(dirname $0)"
 DEVELOPMENT="$BASE/build"
 KEEPERS="$BASE/keepers"
 DEPENDENCIES="$BASE/dependencies"
+PACKAGE_TMP="$BASE/package"
+EXTRA="$BASE/extra"
 
 #CREATE FOLDER HIERARCHY
 echo -e ">> Creating folder hierarchy"
-mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
+mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES" "$EXTRA"
 
 
 #CHECK IF GCC HAS C++14 SUPPORT, DISPLAY A MESSAGE AND ABORT OTHERWISE
@@ -332,8 +335,8 @@ if [ $BUILD_UNSHIELD ]; then
 
     make install
     
-    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/install/unshield/lib
-    export PATH="$DEPENDENCIES"/install/unshield/bin:"$PATH"
+    export PATH="$DEPENDENCIES"/unshield/install/bin:"$PATH"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/unshield/install/lib
     
     cd "$BASE"
 fi
@@ -420,6 +423,30 @@ make install
 cd "$BASE"
 
 fi
+
+#BUILD_SDL2
+if [ $BUILD_SDL2 ]; then
+    echo -e "\n>> Building SDL2"
+    git clone --recursive https://github.com/spurious/SDL-mirror.git "$DEPENDENCIES"/SDL-mirror
+	 mkdir "$DEPENDENCIES"/SDL-mirror/build 
+	 cd "$DEPENDENCIES"/SDL-mirror/build 
+     rm CMakeCache.txt
+     cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/SDL-mirror/install -DCMAKE_BUILD_TYPE=Release ..
+     make -j$CORES
+
+      if [ $? -ne 0 ]; then
+        echo -e "Failed to build SDL2.\nExiting..."
+       exit 1
+      fi
+
+    make install
+    
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"$DEPENDENCIES"/SDL-mirror/install/lib
+    export PATH="$DEPENDENCIES"/SDL-mirror/install/bin:"$PATH"
+    
+    cd "$BASE"
+fi
+
 
 #BUILD OPENSCENEGRAPH
 if [ $BUILD_OSG ]; then
@@ -540,6 +567,7 @@ fi
 echo -e "\n>> Building CallFF"
  mkdir "$DEPENDENCIES"/callff/build
  cd "$DEPENDENCIES"/callff/build
+ rm CMakeCache.txt
  cmake ..
  make -j$CORES
 

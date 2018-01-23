@@ -19,16 +19,19 @@ ENVREL="$(uname -r)"
 
 #FOLDER HIERARCHY
 BASE="$(pwd)"
+SCRIPT_BASE="$(dirname $0)"
 CODE="$BASE/code"
 DEVELOPMENT="$BASE/build"
 KEEPERS="$BASE/keepers"
 DEPENDENCIES="$BASE/dependencies"
+PACKAGE_TMP="$BASE/package"
+EXTRA="$BASE/extra"
 
 if [ -d "$DEPENDENCIES"/boost ]; then
   BUILD_BOOST=true
 fi
 
-if [ -d "$DEPENDENCIES"/SDL2 ]; then
+if [ -d "$DEPENDENCIES"/SDL-mirror ]; then
   BUILD_SDL2=true
 fi
 
@@ -64,7 +67,7 @@ if [ $BUILD_BOOST ]; then BOOST_LOCATION="$DEPENDENCIES"/boost
 	export BOOST_ROOT="${BOOST_LOCATION}"/install
 	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BOOST_LOCATION}"/install/lib 
 fi
-if [ $BUILD_SDL2 ]; then SDL2_LOCATION="$DEPENDENCIES"/SDL2
+if [ $BUILD_SDL2 ]; then SDL2_LOCATION="$DEPENDENCIES"/SDL-mirror
 	export SDL2DIR="${SDL2_LOCATION}"/install
 	export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${SDL2_LOCATION}"/install/lib 
 fi
@@ -286,6 +289,7 @@ case $ENVTYPE in
       -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a \
       -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a \
       -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
+      -DSol2_INCLUDE_DIR="${CODE}"/extern/sol \
       -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
 
    if [ $BUILD_BOOST ]; then
