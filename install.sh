@@ -37,7 +37,7 @@ case $ENVTYPE in
     #Check Windows Env And Install Deps
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MSYS_NT-5.1" | "MINGW32_NT-6.1" | "MSYS_NT-6.1" | "MSYS_NT-10.0-WOW" | "MINGW32_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
+	"MINGW64*" | "MINGW64_NT-6.1-WOW" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MINGW32_NT-6.1" | "MSYS_NT-6.1" | "MSYS_NT-6.1-WOW" | "MSYS_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
 	
 		if [ "$ENVREL" == "1.0.11(0.46/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
 		echo -e "You seem to be running MSYS 1 MINGW32 Env"
@@ -54,11 +54,11 @@ case $ENVTYPE in
 		 pacman -Syuu   # update the package list, Warn broken on nt-5.1 !!!
 		
 	    #If you installed 64-bit MSYS2, then do
-		if [ "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" ]; then
+		if [ "$ENVPLATFOM" == "MINGW64_NT-6.1-WOW" -o "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" ]; then
 		echo -e "You seem to be running MSYS 2 MINGW64 Env"
 		 pacman -Sy base-devel mingw-w64-x86_64-toolchain
 		 
-		 pacman -Sy git wget unzip mingw-w64-x86_64-doxygen mingw-w64-x86_64-gtest mingw-x86_64-luajit-git mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openal mingw-w64-x86_64-OpenSceneGraph mingw-w64-x86_64-bullet mingw-w64-x86_64-qt5 mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-SDL2 mingw-w64-x86_64-ncurses mingw-w64-x86_64-yasm mingw-w64-x86_64-clang mingw-w64-x86_64-llvm #unshield #mygui  #clang35 llvm35 mingw-w64-x86_64-lua51 #libxkbcommon-x11		
+		 pacman -Sy git wget unzip mingw-w64-x86_64-doxygen mingw-w64-x86_64-gtest mingw-w64-x86_64-luajit-git mingw-w64-x86_64-cmake mingw-w64-x86_64-boost mingw-w64-x86_64-openal mingw-w64-x86_64-OpenSceneGraph mingw-w64-x86_64-bullet mingw-w64-x86_64-qt5 mingw-w64-x86_64-ffmpeg mingw-w64-x86_64-SDL2 mingw-w64-x86_64-ncurses mingw-w64-x86_64-yasm mingw-w64-x86_64-clang mingw-w64-x86_64-llvm #unshield #mygui  #clang35 llvm35 mingw-w64-x86_64-lua51 #libxkbcommon-x11		
 		 
 		 export SDL2DIR=/mingw64 # Fixme TES3MP bug in FindSDL2.cmake
 		 export SDL2_LIBRARY=/mingw64/lib/libSDL2.dll.a
