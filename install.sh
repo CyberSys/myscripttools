@@ -79,7 +79,7 @@ case $ENVTYPE in
 		
 		fi
 		;;
-	"CYGWIN*" | "CYGWIN_NT-5.1" | "CYGWIN_NT-10.0-WOW" | "CYGWIN_NT-10.0" ) # fixme add other ver CYGWIN
+	"CYGWIN*" | "CYGWIN_NT-5.1" | "CYGWIN_NT-6.1" | "CYGWIN_NT-6.1-WOW" | "CYGWIN_NT-10.0-WOW" | "CYGWIN_NT-10.0" ) # fixme add other ver CYGWIN
 	   echo -e "You seem to be running CYGWIN Env"
 	    # TODO Here
 	    # Cygwin prepare
@@ -247,7 +247,8 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
 git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
-git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet 
+#git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet # Now its repo-name is legacy
+git clone https://github.com/TES3MP/CrabNet.git "$DEPENDENCIES"/raknet 
 #if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
 #osg on steroids) (speed up OpenMW team fork)
 if [ $BUILD_OSG ]; then git clone https://github.com/OpenMW/osg.git "$DEPENDENCIES"/osg ; fi
@@ -269,7 +270,7 @@ echo -e "WARNING! Could not determine your Env Type, press ENTER to continue" ; 
 fi
 
 echo -e "\n>> Clone server-side plugins scripts"
-git clone https://github.com/TES3MP/PluginExamples.git "$KEEPERS"/PluginExamples
+git clone https://github.com/TES3MP/CoreScripts.git "$KEEPERS"/PluginExamples
 
 #COPY STATIC SERVER AND CLIENT CONFIGS
 echo -e "\n>> Copying server and client configs to their permanent place"
