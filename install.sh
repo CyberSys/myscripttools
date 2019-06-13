@@ -14,7 +14,11 @@ fi
 
 ENVPLATFOM="$(uname)"
 ENVARCH="$(uname -m)"
-ENVTYPE="$(uname -o)"
+if [ "$ENVPLATFOM" == "Darwin" ]; then
+  ENVTYPE="$ENVPLATFOM"
+else
+  ENVTYPE="$(uname -o)"
+fi
 ENVREL="$(uname -r)"
 
 #ENVPLATFOM="MSYS_NT-5.1"
