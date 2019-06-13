@@ -25,9 +25,23 @@ ENVREL="$(uname -r)"
 echo "$ENVPLATFOM" "$ENVREL" "$ENVARCH" "$ENVTYPE"
 
 case $ENVTYPE in
-   "MacOS" ) # fixme add support this platform
+   "MacOS" | "Darwin" ) # fixme add support this platform
  	   echo -e "You seem to be running MacOS X Env"
-	    # TODO Here
+	    # Used MacPorts
+      
+      sudo port install wget git cmake boost openal OpenSceneGraph bullet qt57 qt57-qt3d qt57-qtwebengine ffmpeg libsdl2 ncurses clang-4.0
+
+        #BUILD_BULLET=true # 
+        #BUILD_UNSHIELD=true # 
+        #BUILD_BOOST=true #
+        #BUILD_SDL2=true #     
+        #BUILD_OSG=true  #   
+        #BUILD_MYGUI=true # 
+        #BUILD_OPENAL=true # 
+        #BUILD_MUMBLE=true
+        #BUILD_FFMPEG=true #
+        #BUILD_TERRA=true #F
+
 	;;  
   
    "Msys" | "Cygwin" )

@@ -173,9 +173,115 @@ echo -e "\n>> Checking if the compiler has the necessary features"
     
 
 case $ENVTYPE in
-   "MacOS" )
+   "MacOS" | "Darwin" )
  	   echo -e "You seem to be running MacOS X Env"
 	    # TODO Here
+
+    
+  CMAKE_PARAMS=" -DDESIRED_QT_VERSION=5 -DBUILD_OPENMW_MP="${BUILD_SERVER}" -DBUILD_WITH_CODE_COVERAGE="${CODE_COVERAGE}" -DBUILD_BSATOOL=ON -DBUILD_ESMTOOL=ON -DBUILD_ESSIMPORTER=ON -DBUILD_LAUNCHER=ON -DBUILD_MWINIIMPORTER=ON -DBUILD_MYGUI_PLUGIN=OFF -DBUILD_OPENCS=ON -DBUILD_WIZARD=ON -DBUILD_BROWSER=ON -DBUILD_WITH_LUA=ON -DFORCE_LUA=OFF -DBUILD_WITH_PAWN=OFF -DBUILD_UNITTESTS=1 -DCMAKE_INSTALL_PREFIX="${DEVELOPMENT}" -DBINDIR="${DEVELOPMENT}"  -DCMAKE_BUILD_TYPE="None" -DUSE_SYSTEM_TINYXML=TRUE \
+      -DCMAKE_CXX_STANDARD=14 \
+      -DCMAKE_CXX_FLAGS=\"-std=c++14\" \
+      -DCallFF_INCLUDES="${CALLFF_LOCATION}"/include \
+      -DCallFF_LIBRARY="${CALLFF_LOCATION}"/build/src/libcallff.a \
+      -DRakNet_INCLUDES="${RAKNET_LOCATION}"/include \
+      -DRakNet_LIBRARY_DEBUG="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a \
+      -DRakNet_LIBRARY_RELEASE="${RAKNET_LOCATION}"/build/lib/libRakNetLibStatic.a \
+      -DTerra_INCLUDES="${TERRA_LOCATION}"/include \
+      -DSol2_INCLUDE_DIR="${CODE}"/extern/sol \
+      -DTerra_LIBRARY_RELEASE="${TERRA_LOCATION}"/lib/libterra.a"
+
+   if [ $BUILD_BOOST ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DBoost_DIR="${BOOST_LOCATION}"/install \
+      -DBoost_INCLUDE_DIR="${BOOST_LOCATION}"/install/include \
+    -DBoost_LIBRARY_DIR="${BOOST_LOCATION}"/install/lib \
+    -DBoost_SYSTEM_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_system-mt.so \
+    -DBoost_PROGRAM_OPTIONS_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_program_options-mt.so \
+    -DBoost_FILESYSTEM_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_filesystem-mt.so \
+    -DBoost_LOCALE_LIBRARY_RELEASE="${BOOST_LOCATION}"/install/lib/libboost_locale-mt.so "
+      export BOOST_ROOT="${BOOST_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BOOST_LOCATION}"/install/lib
+   fi
+   
+   if [ $BUILD_OPENAL ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DOPENAL_INCLUDE_DIR="${OPENAL_LOCATION}"/install/include/AL \
+      -DOPENAL_LIBRARY="${OPENAL_LOCATION}"/install/lib/libopenal.so "
+      export OPENALDIR="${OPENAL_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OPENAL_LOCATION}"/install/lib
+   fi
+   
+   if [ $BUILD_FFMPEG ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+        -DFFmpeg_AVCODEC_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+    -DFFmpeg_AVCODEC_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libavcodec.so \
+    -DFFmpeg_AVFORMAT_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+    -DFFmpeg_AVFORMAT_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libavformat.so \
+    -DFFmpeg_AVUTIL_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+    -DFFmpeg_AVUTIL_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libavutil.so \
+    -DFFmpeg_SWSCALE_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+    -DFFmpeg_SWSCALE_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libswscale.so \
+    -DFFmpeg_SWRESAMPLE_INCLUDE_DIR="${FFMPEG_LOCATION}"/install/include \
+    -DFFmpeg_SWRESAMPLE_LIBRARY="${FFMPEG_LOCATION}"/install/lib/libswresample.so  "
+      export FFMPEG_HOME="${FFMPEG_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${FFMPEG_LOCATION}"/install/lib
+   fi
+   
+   if [ $BUILD_SDL2 ]; then
+     CMAKE_PARAMS="$CMAKE_PARAMS \
+       -DSDL2_INCLUDE_DIR="${SDL2_LOCATION}"/install/include/SDL2 \
+     -DSDL2_TARGET_SPECIFIC=version \
+     -DSDL2_LIBRARY="${SDL2_LOCATION}"/install/lib/libSDL2.so \
+     -DSDL2MAIN_LIBRARY="${SDL2_LOCATION}"/install/lib/libSDL2main.a "
+       export SDL2DIR="${SDL2_LOCATION}"/install
+       export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${SDL2_LOCATION}"/install/lib
+   fi
+   
+   if [ $BUILD_MYGUI ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DMyGUI_INCLUDE_DIR="${MYGUI_LOCATION}"/install/include/MYGUI  \
+    -DMyGUI_LIBRARY="${MYGUI_LOCATION}"/install/lib/libMyGUIEngine.so "
+      export MYGUI_HOME="${MYGUI_LOCATION}"/install
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${MYGUI_LOCATION}"/install/lib
+   fi
+ 
+  if [ $BUILD_OSG ]; then
+  ln -s "$DEPENDENCIES"/osg/install/lib64 "$DEPENDENCIES"/osg/install/lib #some fix, because libs install path osg have arch-deps, but is not implement here e.g. i686 install in .../lib & x86-64 in .../lib64 
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DOPENTHREADS_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOPENTHREADS_LIBRARY="${OSG_LOCATION}"/install/lib/libOpenThreads.so \
+      -DOSG_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSG_LIBRARY="${OSG_LOCATION}"/install/lib/libosg.so \
+      -DOSGANIMATION_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGANIMATION_LIBRARY="${OSG_LOCATION}"/install/lib/libosgAnimation.so \
+      -DOSGDB_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGDB_LIBRARY="${OSG_LOCATION}"/install/lib/libosgDB.so \
+      -DOSGFX_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGFX_LIBRARY="${OSG_LOCATION}"/install/lib/libosgFX.so \
+      -DOSGGA_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGGA_LIBRARY="${OSG_LOCATION}"/install/lib/libosgGA.so \
+      -DOSGPARTICLE_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGPARTICLE_LIBRARY="${OSG_LOCATION}"/install/lib/libosgParticle.so \
+      -DOSGTEXT_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGTEXT_LIBRARY="${OSG_LOCATION}"/install/lib/libosgText.so \
+      -DOSGUTIL_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGUTIL_LIBRARY="${OSG_LOCATION}"/install/lib/libosgUtil.so \
+      -DOSGVIEWER_INCLUDE_DIR="${OSG_LOCATION}"/install/include \
+      -DOSGVIEWER_LIBRARY="${OSG_LOCATION}"/install/lib/libosgViewer.so"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${OSG_LOCATION}"/install/lib
+    export OSG_ROOT="${OSG_LOCATION}"/install
+  fi
+  
+  if [ $BUILD_BULLET ]; then
+    CMAKE_PARAMS="$CMAKE_PARAMS \
+      -DBullet_INCLUDE_DIR="${BULLET_LOCATION}"/install/include/bullet \
+      -DBullet_BulletCollision_LIBRARY="${BULLET_LOCATION}"/install/lib/libBulletCollision.so \
+      -DBullet_LinearMath_LIBRARY="${BULLET_LOCATION}"/install/lib/libLinearMath.so"
+    export LD_LIBRARY_PATH="$LD_LIBRARY_PATH":"${BULLET_LOCATION}"/install/lib
+    export BULLET_ROOT="${BULLET_LOCATION}"/install
+  fi
+  
+
 	;;  
   
    "Msys" | "Cygwin" ) # fixme So... where is Msys1 OR Msys2?
