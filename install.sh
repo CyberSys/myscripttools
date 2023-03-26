@@ -37,7 +37,7 @@ case $ENVTYPE in
     #Check Windows Env And Install Deps
 	 echo -e "\n>> Checking which environment is use"
 	  case $ENVPLATFOM in
-	"MINGW64*" | "MINGW64_NT-6.1-WOW" | "MINGW64_NT-10.0-WOW" | "MINGW32_NT-5.1" | "MINGW32_NT-6.1" | "MSYS_NT-6.1" | "MSYS_NT-6.1-WOW" | "MSYS_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
+	"MINGW64*" | "MINGW64_NT-6.1-WOW" | "MINGW64_NT-6.1-7601" | "MINGW64_NT-10.0-WOW" | "MINGW64_NT-10.0-19045" | "MINGW32_NT-5.1" | "MINGW32_NT-6.1" | "MSYS_NT-6.1" | "MSYS_NT-6.1-WOW" | "MSYS_NT-10.0-WOW" ) # fixme add other ver MINGW/MSYS
 	
 		if [ "$ENVREL" == "1.0.11(0.46/3/2)" ]; then # Is Msys1 OR Msys2? fixme is not work correct & add other ver for msys 1
 		echo -e "You seem to be running MSYS 1 MINGW32 Env"
@@ -54,7 +54,7 @@ case $ENVTYPE in
 		 pacman -Syuu   # update the package list, Warn broken on nt-5.1 !!!
 		
 	    #If you installed 64-bit MSYS2, then do
-		if [ "$ENVPLATFOM" == "MINGW64_NT-6.1-WOW" -o "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" ]; then
+		if [ "$ENVPLATFOM" == "MINGW64_NT-6.1-WOW" -o "MINGW64_NT-6.1-7601" -o "$ENVPLATFOM" == "MINGW64_NT-10.0-WOW" -o "MINGW64_NT-10.0-19045" ]; then
 		echo -e "You seem to be running MSYS 2 MINGW64 Env"
 		 pacman -Sy base-devel mingw-w64-x86_64-toolchain
 		 
@@ -91,7 +91,7 @@ case $ENVTYPE in
     	#BUILD_SDL2=true # not implement/tested yet
 		#BUILD_OSG_DEPS=true # not implement/tested yet
         BUILD_OSG=true #final link with TES3MP have cmake err: Could NOT find OpenSceneGraph: Found unsuitable version "..", but required  is at least "3.3.4"
-        #BUILD_BULLET=true # not tested yet
+        BUILD_BULLET=true # not tested yet
         BUILD_MYGUI=true
         #BUILD_OPENAL=true # not tested yet
     	#BUILD_FFMPEG=true # not tested yet
@@ -253,21 +253,23 @@ DEPENDENCIES="$BASE/dependencies"
 echo -e ">> Creating folder hierarchy"
 mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 
-#CHECK IF GCC HAS C++14 SUPPORT, DISPLAY A MESSAGE AND ABORT OTHERWISE
-echo -e "\n>> Checking if the compiler has the necessary features"
- GCCVERSION=$(gcc -dumpversion)
- GCCVERSION_F=$(echo $GCCVERSION | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
- GCCVERSION_P=$((${GCCVERSION_F}*(10**(5-${#GCCVERSION_F}))))
-  if [ $GCCVERSION_P -lt 60100 ]; then
-     echo -e "\nTES3MP requires some fairly recent C++ features.\nCurrent GCC version is $GCCVERSION.\nUpdate GCC to at least version 6.1 to proceed.\n\nOnly upgrade your toolchain if you know what you are doing.\nProceed at your own risk."
-     exit 1
-  fi
+#CHECK IF GCC HAS C++14 SUPPORT, DISPLAY A MESSAGE AND ABORT OTHERWISE - fixme don't work now 
+#echo -e "\n>> Checking if the compiler has the necessary features"
+# GCCVERSION=$(gcc -dumpversion)
+# GCCVERSION_F=$(echo $GCCVERSION | sed -e 's/\.\([0-9][0-9]\)/\1/g' -e 's/\.\([0-9]\)/0\1/g' -e 's/^[0-9]\{3,4\}$$/&00/')
+# GCCVERSION_P=$((${GCCVERSION_F}*(10**(5-${#GCCVERSION_F}))))
+#  if [ $GCCVERSION_P -lt 60100 ]; then
+#     echo -e "\nTES3MP requires some fairly recent C++ features.\nCurrent GCC version is $GCCVERSION.\nUpdate GCC to at least version 6.1 to proceed.\n\nOnly upgrade your toolchain if you know what you are doing.\nProceed at your own risk."
+#     exit 1
+#  fi
         
 #PULL SOFTWARE VIA GIT
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
-git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
-git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet
+#git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
+git clone https://github.com/CyberSys/CallFF "$DEPENDENCIES"/callff
+#git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet # Now its repo-name is legacy
+git clone https://github.com/TES3MP/CrabNet.git "$DEPENDENCIES"/raknet 
 #if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
 #osg on steroids) (speed up OpenMW team fork)
 if [ $BUILD_OSG ]; then git clone https://github.com/OpenMW/osg.git "$DEPENDENCIES"/osg ; fi
@@ -523,13 +525,13 @@ if [ $BUILD_BULLET ]; then
     echo -e "\n>> Building Bullet Physics"
     cd "$DEPENDENCIES"/bullet
     mkdir "$DEPENDENCIES"/bullet/build
-    git checkout tags/2.86
+    git checkout tags/3.17
     cd "$DEPENDENCIES"/bullet/build
     rm CMakeCache.txt
 	if [ "$ENVTYPE" == "Msys" ]; then
-	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DINSTALL_EXTRA_LIBS=1 -DCMAKE_BUILD_TYPE=Release ..    
+	cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DBUILD_EXTRAS=0 -DBUILD_UNIT_TESTS=0 -DINSTALL_EXTRA_LIBS=0 -DCMAKE_BUILD_TYPE=Release -DUSE_DOUBLE_PRECISION=1 -DBUILD_BULLET2_DEMOS=0 ..    
 	else
-    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DINSTALL_EXTRA_LIBS=1 -DCMAKE_BUILD_TYPE=Release ..
+    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DBUILD_EXTRAS=0 -DBUILD_UNIT_TESTS=0 -DINSTALL_EXTRA_LIBS=0 -DCMAKE_BUILD_TYPE=Release -DUSE_DOUBLE_PRECISION=1 -DBUILD_BULLET2_DEMOS=0 ..
     fi
 	make -j$CORES
 
@@ -551,8 +553,8 @@ if [ ! -e mygui ]; then
   git clone https://github.com/MyGUI/mygui
 fi
 cd mygui
-#git pull
-git checkout tags/MyGUI3.2.2
+git pull
+#git checkout tags/MyGUI3.2.2
 mkdir "$DEPENDENCIES"/mygui/build 
 cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
@@ -597,6 +599,7 @@ fi
 echo -e "\n>> Building CallFF"
  mkdir "$DEPENDENCIES"/callff/build
  cd "$DEPENDENCIES"/callff/build
+ rm CMakeCache.txt
  if [ "$ENVTYPE" == "Msys" ]; then
  cmake -G "MSYS Makefiles" ..
  else
