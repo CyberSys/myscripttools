@@ -31,17 +31,17 @@ case $ENVTYPE in
 	   echo -e "You seem to be running Haiku Env"
 	    # TODO Here
 	    pkgman update
-	    pkgman install git cmake_x86 boost_x86 openal_x86_devel ffmpeg_x86_devel libsdl2_x86_devel qt5_x86_devel freetype_x86_devel zlib_x86_devel jpeg_x86_devel tiff4_x86_devel libpng16_x86_devel giflib_x86_devel jasper_x86_devel mesa_x86_devel ncurses_x86_devel llvm_x86_clang #lua_x86_devel #curl_x86_devel
+	    pkgman install git_x86 cmake_x86 unshield_x86_devel libxml2_x86_devel boost_build_x86 luajit_x86_devel glew_x86_devel openal_x86_devel ffmpeg_x86_devel libsdl2_x86_devel sdl2_image_x86_devel qt5_x86_devel qt5_x86_tools freetype_x86_devel zlib_x86_devel libjpeg_turbo_x86_devel tiff4_x86_devel libpng16_x86_devel giflib_x86_devel jasper_x86_devel mesa_x86_devel ncurses6_x86_devel llvm_x86_clang #lua_x86_devel #curl_x86_devel
 	    
 	    BUILD_BULLET=true
-        BUILD_UNSHIELD=true
+        #BUILD_UNSHIELD=true
     	#BUILD_BOOST=true #Fix me building not work
     	#BUILD_SDL2=true    	
         BUILD_OSG=true # seem OpenSceneGraph not fully ported on hauku yet       
         BUILD_MYGUI=true
         #BUILD_OPENAL=true
     	#BUILD_FFMPEG=true #Fix me building not work
-        BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
+        #BUILD_TERRA=true #Fix me building not work needed llvm3.5 & clang3.5
     ;;
    "Msys" | "Cygwin" )
      
@@ -251,9 +251,10 @@ mkdir "$DEVELOPMENT" "$KEEPERS" "$DEPENDENCIES"
 echo -e "\n>> Downloading software"
 git clone https://github.com/TES3MP/openmw-tes3mp.git "$CODE"
 git clone https://github.com/Koncord/CallFF "$DEPENDENCIES"/callff
-git clone https://github.com/TES3MP/RakNet.git "$DEPENDENCIES"/raknet 
-if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
-if [ $BUILD_MYGUI ]; then git clone https://github.com/MyGUI/mygui.git "$DEPENDENCIES"/mygui ; fi
+git clone https://github.com/TES3MP/CrabNet.git "$DEPENDENCIES"/raknet 
+#if [ $BUILD_OSG ]; then git clone https://github.com/openscenegraph/OpenSceneGraph.git "$DEPENDENCIES"/osg ; fi
+if [ $BUILD_OSG ]; then git clone https://github.com/OpenMW/osg.git "$DEPENDENCIES"/osg ; fi
+if [ $BUILD_MYGUI ]; then git clone https://github.com/CyberSys/mygui.git "$DEPENDENCIES"/mygui ; fi
 if [ $BUILD_BULLET ]; then git clone https://github.com/bulletphysics/bullet3.git "$DEPENDENCIES"/bullet ; fi
 if [ $BUILD_TERRA ]; then git clone https://github.com/zdevito/terra.git "$DEPENDENCIES"/terra ;
 
@@ -434,18 +435,35 @@ if [ $BUILD_OSG ]; then
   
  
   else #Add other platform-specific steps
-   echo -e "\n>>Warning!!! build OpenSceneGraph 3rdparty deps first before try build osg"
+    echo -e "\n>>Warning!!! build OpenSceneGraph 3rdparty deps first before try build osg"
   fi
 echo -e "\n>> Building OpenSceneGraph" 
     cd "$DEPENDENCIES"/osg
     mkdir "$DEPENDENCIES"/osg/build
-    git checkout tags/OpenSceneGraph-3.4.0
-    cd "$DEPENDENCIES"/osg/build
+    git checkout tags/OpenSceneGraph-3.6.5
+     if [ "$ENVTYPE" == "Haiku" ]; then
+     echo -e "\n>> Haiku osg build needed apply patches"
+      if [ ! -f ./openscenegraph-3.6.5.patchset ]; then
+       wget https://raw.githubusercontent.com/haikuports/haikuports/master/games-engines/openscenegraph/patches/openscenegraph-3.6.5.patchset 
+        git apply ./openscenegraph-3.6.5.patchset
+      fi
+         cd "$DEPENDENCIES"/osg/build
+         rm CMakeCache.txt
+         cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
+         -DBUILD_OSG_APPLICATIONS:BOOL=OFF \
+		 -DOSG_GL3_AVAILABLE:BOOL=ON \
+		 -DOSG_WINDOWING_SYSTEM=None \
+         -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
+         -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
+         -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
+     else
+     cd "$DEPENDENCIES"/osg/build
     rm CMakeCache.txt
     cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/osg/install \
     -DBUILD_OSG_PLUGINS_BY_DEFAULT=0 -DBUILD_OSG_PLUGIN_OSG=1 -DBUILD_OSG_PLUGIN_DDS=1 \
     -DBUILD_OSG_PLUGIN_TGA=1 -DBUILD_OSG_PLUGIN_BMP=1 -DBUILD_OSG_PLUGIN_JPEG=1 \
     -DBUILD_OSG_PLUGIN_PNG=1 -DBUILD_OSG_DEPRECATED_SERIALIZERS=0 ..
+    fi
     make -j$CORES
 
     if [ $? -ne 0 ]; then
@@ -462,10 +480,22 @@ if [ $BUILD_BULLET ]; then
     echo -e "\n>> Building Bullet Physics"
     cd "$DEPENDENCIES"/bullet
     mkdir "$DEPENDENCIES"/bullet/build
-    git checkout tags/2.86
+    git checkout tags/3.17
     cd "$DEPENDENCIES"/bullet/build
     rm CMakeCache.txt
-    cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DINSTALL_EXTRA_LIBS=1 -DCMAKE_BUILD_TYPE=Release ..
+    if [ "$ENVTYPE" == "Haiku" ]; then
+     cmake .. \
+		-Wno-dev \
+		-DBUILD_SHARED_LIBS=ON \
+		-DUSE_DOUBLE_PRECISION=ON \
+		-DBUILD_BULLET2_DEMOS=OFF \
+		-DBUILD_EXTRAS=OFF \
+		-DBUILD_UNIT_TESTS=OFF \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DINSTALL_LIBS=ON 
+    else
+      cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/bullet/install -DBUILD_SHARED_LIBS=1 -DINSTALL_LIBS=1 -DINSTALL_EXTRA_LIBS=1 -DCMAKE_BUILD_TYPE=Release ..
+    fi
     make -j$CORES
 
     if [ $? -ne 0 ]; then
@@ -483,13 +513,34 @@ if [ $BUILD_MYGUI ]; then
 echo -e "\n>> Building MyGUI libraries"
 cd "$DEPENDENCIES"
 if [ ! -e mygui ]; then
-  git clone https://github.com/MyGUI/mygui
+  git clone https://github.com/CyberSys/mygui
 fi
 cd mygui
 git pull
+git checkout MyGUI_3.2.3
 mkdir "$DEPENDENCIES"/mygui/build 
 cd "$DEPENDENCIES"/mygui/build
 rm CMakeCache.txt
+if [ "$ENVTYPE" == "Haiku" ]; then
+cd "$DEPENDENCIES"/mygui
+     echo -e "\n>> Haiku MyGUI build needed apply patches"
+      if [ ! -f ./mygui-3.2.3~git.patchset ]; then
+       wget https://raw.githubusercontent.com/haikuports/haikuports/master/dev-games/mygui/patches/mygui-3.2.3~git.patchset
+        git apply ./mygui-3.2.3~git.patchset
+      fi
+cd "$DEPENDENCIES"/mygui/build
+	cmake .. \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
+		-DMYGUI_RENDERSYSTEM=4 \
+		-DMYGUI_SAMPLES_INPUT=4 \
+		-DMYGUI_BUILD_TOOLS=TRUE \
+		-DMYGUI_BUILD_DEMOS=FALSE \
+		-DMYGUI_DISABLE_PLUGINS=FALSE \
+		-DMYGUI_INSTALL_TOOLS=TRUE \
+		-DMYGUI_INSTALL_MEDIA=TRUE \
+		-DMYGUI_USE_SYSTEM_GLEW=TRUE
+else
 cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
 -DFREETYPE_INCLUDE_DIR=/usr/include/freetype2/ \
 -DMYGUI_BUILD_DEMOS:BOOL=OFF \
@@ -499,6 +550,7 @@ cmake -DCMAKE_INSTALL_PREFIX="$DEPENDENCIES"/mygui/install \
 -DMYGUI_BUILD_PLUGINS:BOOL=OFF \
 -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
 -DCMAKE_CXX_FLAGS="-march=native" ..
+fi
 make -j$CORES
 
 if [ $? -ne 0 ]; then
